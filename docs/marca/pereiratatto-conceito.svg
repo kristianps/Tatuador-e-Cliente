@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-labelledby="titulo descricao">
+  <title id="titulo">Conceito de marca PereiraTatto</title>
+  <desc id="descricao">Logotipo tipográfico em vermelho vinho sobre fundo preto carvão, com apoio em marfim.</desc>
+  <rect width="1200" height="420" rx="28" fill="#171717"/>
+  <path d="M118 310H1082" stroke="#8F1D2C" stroke-width="3"/>
+  <text x="600" y="211" text-anchor="middle" fill="#F2EEE9" font-family="Georgia, 'Times New Roman', serif" font-size="90" font-weight="700" letter-spacing="-3">Pereira<tspan fill="#8F1D2C">Tatto</tspan></text>
+  <text x="600" y="270" text-anchor="middle" fill="#C9C1BB" font-family="Arial, sans-serif" font-size="17" font-weight="600" letter-spacing="7">ESTÚDIO DE TATUAGEM</text>
+</svg>

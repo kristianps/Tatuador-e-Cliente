@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 148 148" role="img" aria-labelledby="titulo descricao">
+<title id="titulo">Decalque de sol</title>
+<desc id="descricao">Ilustra??o vetorial original em tra?o preto com detalhes vinho.</desc>
+<g fill="none" stroke="#171717" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="74" cy="67" r="22"/><circle cx="74" cy="67" r="15"/><path d="M74 29V17m0 100v-12M36 67H24m100 0h-12M47 40 38 31m72 72-9-9m0-54 9-9m-72 72-9 9M57 18l4 10m30 78 4 10m24-39-10-4M43 91l-10-4m80-38-10 4M45 81l-10 4"/><path d="M69 65c3-4 7-4 10 0m-12 8c4 4 10 4 14 0"/><circle cx="74" cy="67" r="3" class="vermelho"/></g>
+<style>.vermelho{fill:#8f1d2c;stroke:#8f1d2c}</style>
+</svg>

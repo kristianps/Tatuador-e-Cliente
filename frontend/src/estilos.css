@@ -1,0 +1,232 @@
+/* Define a paleta e as fontes escolhidas para a identidade da PereiraTatto. */
+:root {
+  font-family: Arial, sans-serif;
+  color: #171717;
+  background: #f2eee9;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  font-smooth: always;
+  --preto-carvao: #171717;
+  --vermelho-vinho: #8f1d2c;
+  --marfim: #f2eee9;
+  --borda: #d8d1ca;
+}
+
+* { box-sizing: border-box; }
+
+/* Mantém o conteúdo centralizado em telas grandes sem limitar o uso no celular. */
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button, input, textarea, select { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: wait; opacity: .7; }
+
+.aplicacao { min-height: 100vh; }
+
+/* Usa o cabeçalho escuro para dar presença à marca e separar a escolha de perfil. */
+.cabecalho {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 24px;
+  padding: 22px max(24px, calc((100vw - 1060px) / 2));
+  color: var(--marfim);
+  background: var(--preto-carvao);
+}
+
+.marca {
+  color: var(--marfim);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  text-decoration: none;
+}
+
+.marca span { color: var(--vermelho-vinho); }
+.assinatura { margin: 2px 0 0; color: #c9c1bb; font-size: 10px; letter-spacing: 3px; }
+
+.seletor-perfil {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: grid;
+  gap: 5px;
+  color: #c9c1bb;
+  font-size: 12px;
+}
+
+.seletor-perfil select {
+  min-width: 190px;
+  padding: 9px 12px;
+  color: var(--marfim);
+  border: 1px solid #625b57;
+  border-radius: 6px;
+  background: #252323;
+}
+
+/* Apresenta somente as duas telas previstas para o perfil escolhido. */
+.navegacao {
+  display: flex;
+  gap: 8px;
+  padding: 0 max(24px, calc((100vw - 1060px) / 2));
+  border-bottom: 1px solid var(--borda);
+  background: #fffdfa;
+}
+
+.aba {
+  padding: 15px 17px;
+  color: #5d5651;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+}
+
+.aba:hover, .aba.ativa { color: var(--preto-carvao); }
+.aba.ativa { border-bottom-color: var(--vermelho-vinho); font-weight: 700; }
+
+/* Mantém a largura confortável para os formulários e listas. */
+.conteudo {
+  width: min(100% - 32px, 920px);
+  margin: 42px auto 64px;
+}
+
+.painel {
+  padding: clamp(22px, 5vw, 42px);
+  border: 1px solid #e1d9d1;
+  border-radius: 12px;
+  background: #fffdfa;
+  box-shadow: 0 12px 34px rgb(23 23 23 / 5%);
+}
+
+.sobretitulo, .identificador {
+  margin: 0 0 8px;
+  color: var(--vermelho-vinho);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+h1, h2, p { overflow-wrap: anywhere; }
+h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(30px, 5vw, 42px); }
+h2 { margin: 0; font-size: 19px; }
+.introducao { max-width: 650px; margin: 12px 0 28px; color: #625b56; line-height: 1.6; }
+
+/* Agrupa os campos para que rótulos e controles fiquem fáceis de localizar. */
+.formulario { display: grid; gap: 18px; max-width: 680px; }
+.formulario label, .filtro-etapa { display: grid; gap: 8px; font-size: 14px; font-weight: 700; }
+.formulario input, .formulario textarea, .formulario select, .filtro-etapa select {
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 13px;
+  color: var(--preto-carvao);
+  border: 1px solid #bdb5ae;
+  border-radius: 6px;
+  background: var(--marfim);
+  font-weight: 400;
+}
+.formulario textarea { min-height: 112px; resize: vertical; }
+.formulario input:focus, .formulario textarea:focus, .formulario select:focus, .filtro-etapa select:focus {
+  outline: 3px solid rgb(143 29 44 / 22%);
+  border-color: var(--vermelho-vinho);
+}
+.linha-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* Organiza as figuras em cartões que podem ser marcados por toque ou clique. */
+.campo-figuras { min-width: 0; margin: 0; padding: 0; border: 0; }
+.campo-figuras legend { font-size: 15px; font-weight: 700; }
+.ajuda-campo { margin: 7px 0 12px; color: #625b56; font-size: 13px; line-height: 1.5; }
+.grade-figuras { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.figura {
+  display: grid;
+  min-height: 142px;
+  align-content: start;
+  justify-items: center;
+  gap: 9px;
+  padding: 12px 8px;
+  color: var(--preto-carvao);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--marfim);
+  font-size: 13px;
+  transition: border-color .15s ease, background .15s ease, transform .15s ease;
+}
+.figura:hover { transform: translateY(-2px); border-color: var(--vermelho-vinho); }
+.figura.selecionada { color: var(--vermelho-vinho); border: 2px solid var(--vermelho-vinho); background: #fffdfa; box-shadow: 0 0 0 2px rgb(143 29 44 / 10%); }
+.figura:focus-visible { outline: 3px solid rgb(143 29 44 / 28%); outline-offset: 2px; }
+.imagem-decalque { display: block; width: 100%; height: 88px; object-fit: contain; }
+.ideia-personalizada { display: grid; gap: 12px; margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--borda); }
+.ideia-personalizada > label { display: grid; gap: 8px; font-size: 14px; font-weight: 700; }
+.campo-ideia-livre { width: 100%; min-height: 110px; padding: 11px 13px; color: var(--preto-carvao); border: 1px solid #bdb5ae; border-radius: 6px; background: var(--marfim); font: inherit; font-weight: 400; resize: vertical; }
+.campo-ideia-livre:focus { outline: 3px solid rgb(143 29 44 / 22%); border-color: var(--vermelho-vinho); }
+.resumo-selecao { min-height: 20px; margin: 12px 0 0; color: #625b56; font-size: 13px; }
+
+/* Destaca a ação principal em vinho e deixa ações secundárias mais discretas. */
+.botao-principal, .botao-secundario {
+  min-height: 44px;
+  padding: 10px 17px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+.botao-principal { justify-self: start; color: var(--marfim); border: 1px solid var(--vermelho-vinho); background: var(--vermelho-vinho); }
+.botao-principal:hover:not(:disabled) { background: #741725; }
+.botao-secundario { color: var(--preto-carvao); border: 1px solid var(--preto-carvao); background: var(--marfim); }
+.botao-secundario:hover { background: #e8e0d8; }
+
+/* Mantém etapa e histórico como texto, sem depender somente das cores. */
+.lista-tatuagens { display: grid; gap: 14px; margin: 24px 0 0; padding: 0; list-style: none; }
+.cartao-tatuagem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid var(--borda);
+  border-left: 4px solid var(--vermelho-vinho);
+  border-radius: 8px;
+  background: var(--marfim);
+}
+.cartao-tatuagem p { margin: 8px 0; color: #625b56; }
+.etapa { display: inline-block; margin-top: 4px; padding: 5px 9px; border: 1px solid #8a817a; border-radius: 99px; font-size: 12px; font-weight: 700; }
+.identificador { margin-bottom: 7px; font-size: 10px; }
+.filtro-etapa { max-width: 340px; margin: 20px 0; }
+
+.estado-tela, .estado-vazio { padding: 20px; color: #625b56; border-radius: 8px; background: var(--marfim); }
+.aviso { margin: 18px 0 0; padding: 13px 15px; border-radius: 6px; }
+.aviso.erro { color: #721b26; border: 1px solid #c9868d; background: #f8e7e8; }
+.aviso.sucesso { color: #183c2b; border: 1px solid #8db39b; background: #e7f2eb; }
+
+.historico { margin-top: 32px; padding-top: 26px; border-top: 1px solid var(--borda); }
+.titulo-historico { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.lista-passos { display: grid; gap: 0; margin: 20px 0 0; padding: 0 0 0 22px; }
+.lista-passos li { padding: 0 0 20px 8px; }
+.lista-passos time { display: block; margin-top: 5px; color: #625b56; font-size: 13px; }
+.lista-passos li p { margin: 7px 0 0; }
+
+.resumo-ficha { display: grid; gap: 9px; margin: 22px 0 30px; padding: 20px; border-radius: 8px; background: var(--marfim); }
+.resumo-ficha p { margin: 0; color: #625b56; }
+.titulo-secao { margin: 0 0 18px; font-family: Georgia, "Times New Roman", serif; }
+.rodape { padding: 24px; color: #c9c1bb; background: var(--preto-carvao); text-align: center; font-size: 12px; letter-spacing: .5px; }
+
+/* Empilha os campos e cartões em telas estreitas para preservar a leitura no celular. */
+@media (max-width: 620px) {
+  .cabecalho { padding: 17px 18px; gap: 4px 12px; }
+  .marca { font-size: 25px; }
+  .assinatura { font-size: 8px; letter-spacing: 2px; }
+  .seletor-perfil select { min-width: 150px; max-width: 46vw; }
+  .navegacao { padding: 0 12px; }
+  .aba { flex: 1; padding: 13px 8px; font-size: 13px; }
+  .conteudo { width: min(100% - 20px, 920px); margin: 20px auto 36px; }
+  .painel { padding: 22px 17px; }
+  .linha-campos { grid-template-columns: 1fr; }
+  .grade-figuras { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .figura { min-height: 124px; padding: 9px 5px; font-size: 12px; }
+  .imagem-decalque { height: 78px; }
+  .cartao-tatuagem { align-items: flex-start; flex-direction: column; }
+  .cartao-tatuagem .botao-secundario { width: 100%; }
+  .titulo-historico { align-items: flex-start; }
+}
