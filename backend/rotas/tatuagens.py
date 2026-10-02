@@ -36,3 +36,15 @@ def mostrar_tatuagem(tatuagem_id: int):
 )
 def pedir_tatuagem(dados: TatuagemEntrada):
     return servico_tatuagem.criar_tatuagem(dados.model_dump())
+
+
+# Descarta um pedido e todo o histórico que pertence a ele.
+@router.delete("/tatuagens/{tatuagem_id}", status_code=status.HTTP_204_NO_CONTENT)
+def descartar_tatuagem(tatuagem_id: int):
+    tatuagem = servico_tatuagem.descartar_tatuagem(tatuagem_id)
+    if tatuagem is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tatuagem não encontrada.",
+        )
+    return None

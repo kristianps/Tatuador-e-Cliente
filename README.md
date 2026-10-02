@@ -47,7 +47,7 @@ Abra [http://127.0.0.1:5173](http://127.0.0.1:5173). Escolha Bruna para pedir e 
 
 ## Fluxo manual para conferir a aplicação
 
-1. Com os dois servidores ligados, escolha Bruna, selecione figuras do catálogo (ou adicione uma opção para esta sessão), informe local do corpo e tamanho e envie o pedido.
+1. Com os dois servidores ligados, escolha Bruna, selecione uma ou mais refer?ncias visuais e escolha a regiao do corpo no menu.
 2. Em **Minhas tatuagens**, confira a etapa inicial e abra o histórico.
 3. Escolha Vitor, abra **A agenda** e selecione a tatuagem.
 4. Na ficha, registre o desenho aprovado e depois uma ou mais sessões.
@@ -61,4 +61,5 @@ Os dados ficam em listas na memória e são apagados quando o backend é reinici
 - [Cartilha](docs/CARTILHA.md)
 - [Briefing](docs/BRIEFING.md)
 - [Styleguide](docs/styleguide/STYLEGUIDE.md)
+- [Cr�ditos e licen�as das imagens](docs/CREDITOS_IMAGENS.md)
 - [Conceito da marca](docs/marca/pereiratatto-conceito.svg)

@@ -85,7 +85,7 @@ function MinhasTatuagens({ perfil, enderecoApi }) {
             <li className="cartao-tatuagem" key={tatuagem.id}>
               <div>
                 <h2>{tatuagem.ideia}</h2>
-                <p>{tatuagem.local_corpo} · {tatuagem.tamanho}</p>
+                <p>{tatuagem.local_corpo}</p>
                 <span className="etapa">{tatuagem.etapa}</span>
               </div>
               <button className="botao-secundario" onClick={() => abrirHistorico(tatuagem)}>

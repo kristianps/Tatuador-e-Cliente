@@ -6,7 +6,6 @@ class TatuagemEntrada(BaseModel):
     cliente_id: int = Field(gt=0)
     ideia: str = Field(min_length=1)
     local_corpo: str = Field(min_length=1)
-    tamanho: str = Field(min_length=1)
 
 
 # Define os dados que a API devolve ao mostrar uma tatuagem.
@@ -15,5 +14,4 @@ class TatuagemSaida(BaseModel):
     cliente_id: int
     ideia: str
     local_corpo: str
-    tamanho: str
     etapa: str

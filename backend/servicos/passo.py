@@ -17,6 +17,15 @@ def listar_passos(tatuagem_id: int, cliente_id: Optional[int] = None) -> Optiona
     return repositorio_passo.listar_por_tatuagem(tatuagem_id)
 
 
+# Apaga o histórico de um pedido existente e mantém o pedido ativo.
+def limpar_historico(tatuagem_id: int) -> Optional[int]:
+    tatuagem = repositorio_tatuagem.buscar_por_id(tatuagem_id)
+    if tatuagem is None:
+        return None
+
+    return repositorio_passo.descartar_por_tatuagem(tatuagem_id)
+
+
 # Confere a regra e devolve uma tupla com passo, tatuagem e motivo para a rota escolher o status.
 def registrar_passo(
     tatuagem_id: int, dados: dict
@@ -26,29 +35,18 @@ def registrar_passo(
         return None, None, None
 
     tipo = dados["tipo"]
-    etapa_atual = tatuagem["etapa"]
     etapas_por_tipo = {
+        "pedido recebido": "pedida",
         "desenho aprovado": "desenho aprovado",
         "sessão": "em sessões",
         "retoque": "finalizada",
     }
 
-    # Recusa tipos fora dos três passos que a cartilha descreve.
+    # Aceita somente as quatro etapas que o tatuador pode selecionar.
     if tipo not in etapas_por_tipo:
-        return None, tatuagem, "O tipo deve ser desenho aprovado, sessão ou retoque."
+        return None, tatuagem, "Escolha uma etapa válida para este pedido."
 
-    # Garante que o desenho seja o primeiro passo da sequência.
-    if tipo == "desenho aprovado" and etapa_atual != "pedida":
-        return None, tatuagem, "O desenho só pode ser aprovado quando a tatuagem está pedida."
-
-    # Permite uma ou mais sessões, mas exige aprovação do desenho antes da primeira.
-    if tipo == "sessão" and etapa_atual not in ["desenho aprovado", "em sessões"]:
-        return None, tatuagem, "A sessão só pode ser registrada depois da aprovação do desenho."
-
-    # Exige ao menos uma sessão; a cartilha não define um campo para registrar a cicatrização.
-    # Por isso, o tatuador confirma a cicatrização antes de enviar este passo.
-    if tipo == "retoque" and etapa_atual != "em sessões":
-        return None, tatuagem, "O retoque só pode ser registrado depois de pelo menos uma sessão."
+    # Cada registro atualiza individualmente a etapa selecionada pelo tatuador.
 
     passo = repositorio_passo.criar(
         {

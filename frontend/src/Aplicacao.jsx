@@ -7,23 +7,19 @@ import PedirTatuagem from "./telas/PedirTatuagem.jsx";
 
 const enderecoApi = "http://127.0.0.1:8000";
 
-// Reúne quinze decalques ilustrados para a cliente escolher no pedido.
+// Mantém somente as onze referências do catálogo que já têm imagem de tatuagem ou flash.
 const figurasIniciais = [
-  { id: "rosa", nome: "Rosa", imagem: "/decalques/rosa.svg" },
-  { id: "dragao", nome: "Dragão", imagem: "/decalques/dragao.svg" },
-  { id: "borboleta", nome: "Borboleta", imagem: "/decalques/borboleta.svg" },
-  { id: "caveira", nome: "Caveira", imagem: "/decalques/caveira.svg" },
-  { id: "serpente", nome: "Serpente", imagem: "/decalques/serpente.svg" },
-  { id: "lua", nome: "Lua", imagem: "/decalques/lua.svg" },
-  { id: "sol", nome: "Sol", imagem: "/decalques/sol.svg" },
-  { id: "lobo", nome: "Lobo", imagem: "/decalques/lobo.svg" },
-  { id: "aguia", nome: "Águia", imagem: "/decalques/aguia.svg" },
-  { id: "coracao", nome: "Coração", imagem: "/decalques/coracao.svg" },
-  { id: "lotus", nome: "Flor de lótus", imagem: "/decalques/lotus.svg" },
-  { id: "adaga", nome: "Adaga", imagem: "/decalques/adaga.svg" },
-  { id: "estrela", nome: "Estrela náutica", imagem: "/decalques/estrela.svg" },
-  { id: "montanhas", nome: "Montanhas", imagem: "/decalques/montanhas.svg" },
-  { id: "andorinha", nome: "Andorinha", imagem: "/decalques/andorinha.svg" },
+  { id: "rosa", nome: "Rosa", imagem: "/decalques/rosa-foto.jpg" },
+  { id: "dragao", nome: "Dragão", imagem: "/decalques/dragao.jpg" },
+  { id: "borboleta", nome: "Borboleta", imagem: "/decalques/borboleta_a.jpg" },
+  { id: "caveira", nome: "Caveira", imagem: "/decalques/caveira-foto.jpg" },
+  { id: "serpente", nome: "Serpente", imagem: "/decalques/serpente-foto.jpg" },
+  { id: "lua", nome: "Lua e sol", imagem: "/decalques/lua-foto.jpg" },
+  { id: "lobo", nome: "Lobo", imagem: "/decalques/lobo-foto.jpg" },
+  { id: "aguia", nome: "Águia", imagem: "/decalques/aguia-foto.jpg" },
+  { id: "coracao", nome: "Coração e âncora", imagem: "/decalques/ancora.jpg" },
+  { id: "adaga", nome: "Adaga", imagem: "/decalques/adaga-foto.jpg" },
+  { id: "naval", nome: "Composição naval", imagem: "/decalques/naval_recorte.jpg" },
 ];
 
 // Apresenta a escolha de perfil e as duas telas correspondentes a cada pessoa.
@@ -40,8 +36,7 @@ function Aplicacao() {
   const perfil = perfis.find((item) => item.id === perfilId);
 
   // Troca o perfil e abre a primeira tela adequada a cada tipo de pessoa.
-  function trocarPerfil(evento) {
-    const novoPerfilId = evento.target.value;
+  function trocarPerfil(novoPerfilId) {
     const novoPerfil = perfis.find((item) => item.id === novoPerfilId);
 
     definirPerfilId(novoPerfilId);
@@ -99,16 +94,23 @@ function Aplicacao() {
         </a>
         <p className="assinatura">ESTÚDIO DE TATUAGEM</p>
 
-        <label className="seletor-perfil">
-          <span>Perfil</span>
-          <select value={perfilId} onChange={trocarPerfil}>
+        <div className="seletor-perfil" role="group" aria-label="Escolha como entrar">
+          <span className="rotulo-perfil">Acessar como</span>
+          <div className="opcoes-perfil">
             {perfis.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.nome}
-              </option>
+              <button
+                className={item.id === perfilId ? "opcao-perfil ativa" : "opcao-perfil"}
+                type="button"
+                key={item.id}
+                aria-pressed={item.id === perfilId}
+                onClick={() => trocarPerfil(item.id)}
+              >
+                <span className="icone-perfil" aria-hidden="true">{item.tipo === "cliente" ? "B" : "V"}</span>
+                <span><strong>{item.tipo === "cliente" ? "Bruna" : "Vitor"}</strong><small>{item.tipo === "cliente" ? "Cliente" : "Tatuador"}</small></span>
+              </button>
             ))}
-          </select>
-        </label>
+          </div>
+        </div>
       </header>
 
       <nav className="navegacao" aria-label="Navegação principal">

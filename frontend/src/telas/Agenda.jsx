@@ -1,26 +1,36 @@
 import { useEffect, useState } from "react";
 
+// Os valores de etapa correspondem aos que a API já utiliza.
 const etapas = ["pedida", "desenho aprovado", "em sessões", "finalizada"];
 
-// Permite que o tatuador consulte todos os pedidos e filtre pela etapa atual.
+function nomeEtapa(etapa) {
+  const nomes = {
+    pedida: "Pedido recebido",
+    "desenho aprovado": "Desenho aprovado",
+    "em sessões": "Em sessões",
+    sessão: "Em sessões",
+    "pedido recebido": "Pedido recebido",
+    retoque: "Tatuagem finalizada",
+    finalizada: "Finalizada",
+  };
+  return nomes[etapa] || etapa;
+}
+
+// Reúne os pedidos para o tatuador consultar e abrir cada ficha.
 function Agenda({ enderecoApi, aoAbrirFicha }) {
-  // useState guarda o filtro, a lista e o estado da consulta à API.
   const [etapa, definirEtapa] = useState("");
+  const [busca, definirBusca] = useState("");
   const [tatuagens, definirTatuagens] = useState([]);
   const [estado, definirEstado] = useState("carregando");
   const [erro, definirErro] = useState("");
+  const [pedidoDescartando, definirPedidoDescartando] = useState(null);
+  const [erroAcao, definirErroAcao] = useState("");
 
-  // useEffect consulta de novo quando a etapa muda, mantendo lista, carregamento e erro atualizados.
+  // Carrega os pedidos; o filtro e a busca são aplicados nesta tela.
   useEffect(() => {
-    definirEstado("carregando");
-    definirErro("");
-    const filtro = etapa ? `?etapa=${encodeURIComponent(etapa)}` : "";
-
-    fetch(`${enderecoApi}/tatuagens${filtro}`)
+    fetch(`${enderecoApi}/tatuagens`)
       .then((resposta) => {
-        if (!resposta.ok) {
-          throw new Error("Não foi possível carregar a agenda.");
-        }
+        if (!resposta.ok) throw new Error("Não foi possível carregar a agenda.");
         return resposta.json();
       })
       .then((lista) => {
@@ -31,42 +41,90 @@ function Agenda({ enderecoApi, aoAbrirFicha }) {
         definirErro(erroBusca.message);
         definirEstado("erro");
       });
-  }, [enderecoApi, etapa]);
+  }, [enderecoApi]);
+
+  const pedidosVisiveis = tatuagens.filter((tatuagem) => {
+    const combinaEtapa = !etapa || tatuagem.etapa === etapa;
+    const texto = `${tatuagem.id} ${tatuagem.ideia} ${tatuagem.local_corpo}`.toLocaleLowerCase("pt-BR");
+    return combinaEtapa && texto.includes(busca.trim().toLocaleLowerCase("pt-BR"));
+  });
+
+  // Pede confirmação antes de excluir o pedido e seu histórico.
+  function descartarPedido(tatuagem) {
+    const confirmou = window.confirm(
+      `Descartar o pedido nº ${tatuagem.id}? O histórico dele também será excluído.`,
+    );
+    if (!confirmou) return;
+
+    definirPedidoDescartando(tatuagem.id);
+    definirErroAcao("");
+    fetch(`${enderecoApi}/tatuagens/${tatuagem.id}`, { method: "DELETE" })
+      .then((resposta) => {
+        if (!resposta.ok) throw new Error("Não foi possível descartar este pedido.");
+        definirTatuagens((lista) => lista.filter((item) => item.id !== tatuagem.id));
+        definirPedidoDescartando(null);
+      })
+      .catch((erroDescartar) => {
+        definirErroAcao(erroDescartar.message);
+        definirPedidoDescartando(null);
+      });
+  }
 
   return (
-    <section className="painel">
-      <p className="sobretitulo">GESTÃO DO ESTÚDIO</p>
-      <h1>A agenda</h1>
-      <p className="introducao">Consulte os trabalhos e localize o próximo passo de cada tatuagem.</p>
+    <section className="painel painel-gestao">
+      <header className="cabecalho-agenda-simples">
+        <div>
+          <p className="sobretitulo">ESTÚDIO PEREIRATATTO</p>
+          <h1>Agenda</h1>
+          <p className="introducao">Pedidos e andamento dos trabalhos.</p>
+        </div>
+        <span className="contador-agenda">{pedidosVisiveis.length} {pedidosVisiveis.length === 1 ? "pedido" : "pedidos"}</span>
+      </header>
 
-      <label className="filtro-etapa">
-        Filtrar por etapa
-        <select value={etapa} onChange={(evento) => definirEtapa(evento.target.value)}>
-          <option value="">Todas as etapas</option>
-          {/* map cria uma opção para cada etapa definida pela cartilha. */}
-          {etapas.map((item) => <option key={item} value={item}>{item}</option>)}
-        </select>
-      </label>
+      <div className="filtros-agenda">
+        <label className="busca-agenda">
+          Buscar pedido
+          <input value={busca} onChange={(evento) => definirBusca(evento.target.value)} placeholder="Número, ideia ou local" />
+        </label>
+        <label className="filtro-etapa">
+          Filtrar por etapa
+          <select value={etapa} onChange={(evento) => definirEtapa(evento.target.value)}>
+            <option value="">Todas as etapas</option>
+            {etapas.map((item) => <option key={item} value={item}>{nomeEtapa(item)}</option>)}
+          </select>
+        </label>
+      </div>
 
       {estado === "carregando" && <p className="estado-tela">Carregando agenda…</p>}
       {estado === "erro" && <p className="aviso erro" role="alert">{erro}</p>}
-      {estado === "pronto" && tatuagens.length === 0 && (
-        <div className="estado-vazio">Nenhuma tatuagem encontrada nesta etapa.</div>
+      {erroAcao && <p className="aviso erro" role="alert">{erroAcao}</p>}
+      {estado === "pronto" && pedidosVisiveis.length === 0 && (
+        <div className="estado-vazio">{tatuagens.length === 0 ? "Ainda não há pedidos na agenda." : "Nenhum pedido encontrado com esses filtros."}</div>
       )}
-      {estado === "pronto" && tatuagens.length > 0 && (
-        <ul className="lista-tatuagens">
-          {/* map apresenta um cartão para cada tatuagem retornada pela API. */}
-          {tatuagens.map((tatuagem) => (
-            <li className="cartao-tatuagem" key={tatuagem.id}>
-              <div>
-                <p className="identificador">TATUAGEM Nº {tatuagem.id}</p>
-                <h2>{tatuagem.ideia}</h2>
-                <p>Cliente {tatuagem.cliente_id} · {tatuagem.local_corpo} · {tatuagem.tamanho}</p>
-                <span className="etapa">{tatuagem.etapa}</span>
+      {estado === "pronto" && pedidosVisiveis.length > 0 && (
+        <ul className="lista-tatuagens lista-agenda">
+          {pedidosVisiveis.map((tatuagem) => (
+            <li className="cartao-tatuagem cartao-agenda" key={tatuagem.id}>
+              <div className="numero-agenda" aria-hidden="true">{String(tatuagem.id).padStart(2, "0")}</div>
+              <div className="dados-agenda">
+                <p className="identificador">PEDIDO Nº {tatuagem.id}</p>
+                <h3>{tatuagem.ideia}</h3>
+                <p className="local-agenda">Local: <strong>{tatuagem.local_corpo}</strong></p>
+                <span className="etapa">{nomeEtapa(tatuagem.etapa)}</span>
               </div>
-              <button className="botao-secundario" onClick={() => aoAbrirFicha(tatuagem.id)}>
-                Abrir ficha
-              </button>
+              <div className="acoes-agenda">
+                <button className="botao-secundario" type="button" onClick={() => aoAbrirFicha(tatuagem.id)}>
+                  Abrir ficha <span aria-hidden="true">→</span>
+                </button>
+                <button
+                  className="botao-perigo"
+                  type="button"
+                  disabled={pedidoDescartando === tatuagem.id}
+                  onClick={() => descartarPedido(tatuagem)}
+                >
+                  {pedidoDescartando === tatuagem.id ? "Descartando…" : "Descartar pedido"}
+                </button>
+              </div>
             </li>
           ))}
         </ul>

@@ -44,3 +44,13 @@ def atualizar_etapa(tatuagem_id: int, nova_etapa: str) -> Optional[dict]:
 
     tatuagem["etapa"] = nova_etapa
     return tatuagem
+
+
+# Remove um pedido pelo identificador sem alterar os identificadores dos demais.
+def descartar(tatuagem_id: int) -> Optional[dict]:
+    tatuagem = buscar_por_id(tatuagem_id)
+    if tatuagem is None:
+        return None
+
+    tatuagens.remove(tatuagem)
+    return tatuagem

@@ -1,15 +1,37 @@
 import { useState } from "react";
 
+const locaisDisponiveis = [
+  "Antebraço interno",
+  "Antebraço externo",
+  "Braço",
+  "Ombro",
+  "Peito",
+  "Costela",
+  "Costas",
+  "Nuca",
+  "Mão",
+  "Coxa",
+  "Panturrilha",
+  "Canela",
+  "Tornozelo",
+  "Pé",
+];
+
 // Permite que a cliente escolha decalques ou envie uma ideia própria ao estúdio.
 function PedirTatuagem({ perfil, enderecoApi, figuras }) {
   // useState guarda as referências escolhidas, a ideia livre e os estados do envio.
   const [figurasSelecionadas, definirFigurasSelecionadas] = useState([]);
   const [ideiaLivre, definirIdeiaLivre] = useState("");
   const [localCorpo, definirLocalCorpo] = useState("");
-  const [tamanho, definirTamanho] = useState("");
   const [estado, definirEstado] = useState("pronto");
   const [mensagem, definirMensagem] = useState("");
   const [mostrarIdeiaLivre, definirMostrarIdeiaLivre] = useState(false);
+  // Atualiza o passo em destaque conforme a cliente escolhe referências e região do corpo.
+  const passoAtual = localCorpo
+    ? 3
+    : figurasSelecionadas.length > 0 || ideiaLivre.trim()
+      ? 2
+      : 1;
 
   // Alterna a escolha de um decalque sem impedir que a cliente selecione outros.
   function alternarFigura(figuraId) {
@@ -55,7 +77,6 @@ function PedirTatuagem({ perfil, enderecoApi, figuras }) {
         cliente_id: Number(perfil.id),
         ideia: partesDaIdeia.join(". "),
         local_corpo: localCorpo,
-        tamanho,
       }),
     })
       .then((resposta) => {
@@ -70,7 +91,6 @@ function PedirTatuagem({ perfil, enderecoApi, figuras }) {
         definirFigurasSelecionadas([]);
         definirIdeiaLivre("");
         definirLocalCorpo("");
-        definirTamanho("");
       })
       .catch((erro) => {
         definirEstado("erro");
@@ -80,16 +100,32 @@ function PedirTatuagem({ perfil, enderecoApi, figuras }) {
 
   return (
     <section className="painel">
-      <p className="sobretitulo">PARA COMEÇAR</p>
-      <h1>Pedir tatuagem</h1>
-      <p className="introducao">
-        Escolha referências visuais ou conte ao estúdio o que você imagina.
-      </p>
+      <section className="hero-pedido" aria-labelledby="titulo-pedido">
+        <div className="hero-pedido-texto">
+          <p className="sobretitulo">SUA IDEIA GANHA FORMA AQUI</p>
+          <h1 id="titulo-pedido">Uma tatuagem com a sua história.</h1>
+          <p className="introducao">
+            Escolha referências visuais ou conte ao estúdio o que você imagina.
+          </p>
+          <ol className="passos-pedido" aria-label="Etapas para pedir uma tatuagem">
+            {["Inspire-se", "Escolha o local", "Envie seu pedido"].map((passo, indice) => (
+              <li className={passoAtual === indice + 1 ? "passo-pedido atual" : passoAtual > indice + 1 ? "passo-pedido concluido" : "passo-pedido"} key={passo}>
+                <span>{String(indice + 1).padStart(2, "0")}</span>
+                {passo}
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div className="hero-pedido-imagem">
+          <img src="/decalques/rosa-foto.jpg" alt="Referência fotográfica de uma tatuagem de rosa" />
+          <span>Referência em destaque</span>
+        </div>
+      </section>
 
       <form className="formulario" onSubmit={enviarPedido}>
         <fieldset className="campo-figuras">
-          <legend>Decalques do catálogo</legend>
-          <p className="ajuda-campo">Selecione ou desmarque as figuras que combinam com sua ideia.</p>
+          <legend>Referências de tatuagens</legend>
+          <p className="ajuda-campo">Selecione ou desmarque as imagens que combinam com sua ideia.</p>
           <div className="grade-figuras">
             {figuras.map((figura) => (
               <button
@@ -99,7 +135,7 @@ function PedirTatuagem({ perfil, enderecoApi, figuras }) {
                 aria-pressed={figurasSelecionadas.includes(figura.id)}
                 onClick={() => alternarFigura(figura.id)}
               >
-                <img className="imagem-decalque" src={figura.imagem} alt={`Decalque de ${figura.nome}`} />
+                <img className="imagem-decalque" src={figura.imagem} alt={`Imagem de referência: ${figura.nome}`} loading="lazy" />
                 <span>{figura.nome}</span>
               </button>
             ))}
@@ -139,26 +175,19 @@ function PedirTatuagem({ perfil, enderecoApi, figuras }) {
           )}
         </section>
 
-        <div className="linha-campos">
-          <label>
-            Local do corpo
-            <input
+        <label className="campo-local-corpo">
+            Onde deseja tatuar?
+            <select
               value={localCorpo}
               onChange={(evento) => definirLocalCorpo(evento.target.value)}
-              placeholder="Ex.: antebraço"
               required
-            />
-          </label>
-          <label>
-            Tamanho
-            <input
-              value={tamanho}
-              onChange={(evento) => definirTamanho(evento.target.value)}
-              placeholder="Ex.: 15 cm"
-              required
-            />
-          </label>
-        </div>
+            >
+              <option value="" disabled>Selecione uma região do corpo</option>
+              {locaisDisponiveis.map((local) => (
+                <option key={local} value={local}>{local}</option>
+              ))}
+            </select>
+        </label>
 
         <button className="botao-principal" type="submit" disabled={estado === "carregando"}>
           {estado === "carregando" ? "Enviando pedido…" : "Enviar pedido"}

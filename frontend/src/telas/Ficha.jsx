@@ -1,33 +1,57 @@
 import { useEffect, useState } from "react";
 
-// Mostra uma tatuagem e permite registrar um passo na sequência da cartilha.
+// Mantém os valores que a API espera e apresenta nomes corrigidos na tela.
+const etapas = ["pedida", "desenho aprovado", "em sessões", "finalizada"];
+const opcoesEtapa = [
+  { etapa: "pedida", tipo: "pedido recebido", nome: "Pedido recebido", detalhe: "Pedido na agenda" },
+  { etapa: "desenho aprovado", tipo: "desenho aprovado", nome: "Desenho aprovado", detalhe: "Arte validada" },
+  { etapa: "em sessões", tipo: "sessão", nome: "Em sessões", detalhe: "Trabalho em andamento" },
+  { etapa: "finalizada", tipo: "retoque", nome: "Finalizada", detalhe: "Trabalho concluído" },
+];
+
+function nomeEtapa(etapa) {
+  const nomes = {
+    pedida: "Pedido recebido",
+    "desenho aprovado": "Desenho aprovado",
+    "em sessões": "Em sessões",
+    sessão: "Em sessões",
+    retoque: "Tatuagem finalizada",
+    finalizada: "Finalizada",
+  };
+  return nomes[etapa] || etapa;
+}
+
+// Permite escolher uma etapa independente para cada tatuagem.
 function Ficha({ tatuagemId, enderecoApi, aoVoltar }) {
-  // useState guarda a tatuagem, o formulário e o estado de leitura ou envio.
   const [tatuagem, definirTatuagem] = useState(null);
-  const [tipo, definirTipo] = useState("desenho aprovado");
-  const [data, definirData] = useState("");
-  const [observacao, definirObservacao] = useState("");
+  const [passos, definirPassos] = useState([]);
+  const [etapaSelecionada, definirEtapaSelecionada] = useState("");
   const [estado, definirEstado] = useState("carregando");
+  const [limpandoHistorico, definirLimpandoHistorico] = useState(false);
   const [erro, definirErro] = useState("");
   const [mensagem, definirMensagem] = useState("");
 
-  // useEffect busca de novo se outra tatuagem for escolhida na agenda.
+  // Carrega a tatuagem e os registros já associados a ela.
   useEffect(() => {
-    if (tatuagemId === null) {
-      definirEstado("pronto");
-      return;
-    }
+    if (tatuagemId === null) return;
 
+    definirTatuagem(null);
     definirEstado("carregando");
-    fetch(`${enderecoApi}/tatuagens/${tatuagemId}`)
-      .then((resposta) => {
-        if (!resposta.ok) {
-          throw new Error("Não foi possível carregar esta tatuagem.");
+    definirErro("");
+    Promise.all([
+      fetch(`${enderecoApi}/tatuagens/${tatuagemId}`),
+      fetch(`${enderecoApi}/tatuagens/${tatuagemId}/passos`),
+    ])
+      .then(async ([respostaTatuagem, respostaPassos]) => {
+        if (!respostaTatuagem.ok || !respostaPassos.ok) {
+          throw new Error("Não foi possível carregar esta ficha.");
         }
-        return resposta.json();
+        return Promise.all([respostaTatuagem.json(), respostaPassos.json()]);
       })
-      .then((resultado) => {
+      .then(([resultado, historico]) => {
         definirTatuagem(resultado);
+        definirPassos(historico);
+        definirEtapaSelecionada(resultado.etapa);
         definirEstado("pronto");
       })
       .catch((erroBusca) => {
@@ -36,32 +60,39 @@ function Ficha({ tatuagemId, enderecoApi, aoVoltar }) {
       });
   }, [enderecoApi, tatuagemId]);
 
-  // Envia o passo escolhido e apresenta a etapa devolvida pelo serviço.
-  function enviarPasso(evento) {
+  const indiceEtapa = tatuagem ? etapas.indexOf(tatuagem.etapa) : -1;
+  const opcaoSelecionada = opcoesEtapa.find((opcao) => opcao.etapa === etapaSelecionada);
+
+  // A data é automática; o tatuador pode marcar diretamente a etapa deste pedido.
+  function atualizarAndamento(evento) {
     evento.preventDefault();
     definirEstado("carregando");
     definirErro("");
     definirMensagem("");
 
-    // fetch envia o POST em JSON; o then verifica a resposta e o catch apresenta o erro.
+    const agora = new Date();
+    const hoje = new Date(agora.getTime() - agora.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 10);
+
     fetch(`${enderecoApi}/tatuagens/${tatuagemId}/passos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tipo, data, observacao }),
+      body: JSON.stringify({ tipo: opcaoSelecionada.tipo, data: hoje, observacao: "" }),
     })
       .then((resposta) => {
         if (!resposta.ok) {
           return resposta.json().then((detalhe) => {
-            throw new Error(detalhe.detail || "Não foi possível registrar este passo.");
+            throw new Error(detalhe.detail || "Não foi possível atualizar o andamento.");
           });
         }
         return resposta.json();
       })
       .then((resultado) => {
         definirTatuagem({ ...tatuagem, etapa: resultado.etapa_atualizada });
-        definirMensagem(`Passo registrado. Nova etapa: ${resultado.etapa_atualizada}.`);
-        definirData("");
-        definirObservacao("");
+        definirEtapaSelecionada(resultado.etapa_atualizada);
+        definirPassos([...passos, resultado]);
+        definirMensagem(`Andamento atualizado: ${nomeEtapa(resultado.etapa_atualizada)}.`);
         definirEstado("pronto");
       })
       .catch((erroEnvio) => {
@@ -70,68 +101,109 @@ function Ficha({ tatuagemId, enderecoApi, aoVoltar }) {
       });
   }
 
-  if (estado === "carregando" && tatuagem === null && tatuagemId !== null) {
-    return <p className="estado-tela">Carregando ficha…</p>;
+  // Confirma e apaga somente o histórico deste pedido.
+  function limparHistorico() {
+    const confirmou = window.confirm(
+      `Limpar o histórico do pedido nº ${tatuagem.id}? O pedido continuará na agenda.`,
+    );
+    if (!confirmou) return;
+
+    definirLimpandoHistorico(true);
+    definirErro("");
+    fetch(`${enderecoApi}/tatuagens/${tatuagemId}/passos`, { method: "DELETE" })
+      .then((resposta) => {
+        if (!resposta.ok) throw new Error("Não foi possível limpar este histórico.");
+        return resposta.json();
+      })
+      .then((resultado) => {
+        definirPassos([]);
+        definirMensagem(`${resultado.apagados} registros removidos do histórico.`);
+        definirLimpandoHistorico(false);
+      })
+      .catch((erroLimpeza) => {
+        definirErro(erroLimpeza.message);
+        definirLimpandoHistorico(false);
+      });
   }
 
   if (tatuagemId === null) {
     return (
-      <section className="painel">
+      <section className="painel painel-gestao">
         <p className="sobretitulo">GESTÃO DO ESTÚDIO</p>
-        <h1>A ficha</h1>
-        <p className="introducao">Escolha uma tatuagem na agenda para abrir a ficha.</p>
-        <button className="botao-principal" onClick={aoVoltar}>Ir para a agenda</button>
+        <h1>Ficha de trabalho</h1>
+        <p className="introducao">Escolha um pedido na agenda.</p>
+        <button className="botao-principal" onClick={aoVoltar}>Voltar para a agenda</button>
       </section>
     );
   }
 
-  if (estado === "erro" && tatuagem === null) {
-    return <p className="aviso erro" role="alert">{erro}</p>;
-  }
-
-  if (tatuagem === null) {
-    return <p className="estado-tela">Carregando ficha…</p>;
-  }
+  if (estado === "carregando" && tatuagem === null) return <p className="estado-tela">Carregando ficha…</p>;
+  if (estado === "erro" && tatuagem === null) return <p className="aviso erro" role="alert">{erro}</p>;
+  if (tatuagem === null) return <p className="estado-tela">Carregando ficha…</p>;
 
   return (
-    <section className="painel">
-      <p className="sobretitulo">TATUAGEM Nº {tatuagem.id}</p>
-      <h1>A ficha</h1>
-      <div className="resumo-ficha">
-        <h2>{tatuagem.ideia}</h2>
-        <p>{tatuagem.local_corpo} · {tatuagem.tamanho}</p>
-        <span className="etapa">Etapa: {tatuagem.etapa}</span>
+    <section className="painel painel-gestao ficha-simples">
+      <button className="link-voltar" type="button" onClick={aoVoltar}>← Voltar para a agenda</button>
+      <header className="cabecalho-ficha">
+        <div>
+          <p className="sobretitulo">PEDIDO Nº {tatuagem.id}</p>
+          <h1>Andamento</h1>
+        </div>
+        <span className="etapa etapa-destaque">{nomeEtapa(tatuagem.etapa)}</span>
+      </header>
+
+      <div className="resumo-ficha resumo-ficha-detalhado">
+        <div><span>IDEIA</span><h2>{tatuagem.ideia}</h2></div>
+        <div><span>LOCAL</span><strong>{tatuagem.local_corpo}</strong></div>
       </div>
 
-      <h2 className="titulo-secao">Registrar um passo</h2>
-      <form className="formulario" onSubmit={enviarPasso}>
-        <label>
-          Tipo do passo
-          <select value={tipo} onChange={(evento) => definirTipo(evento.target.value)}>
-            <option value="desenho aprovado">Desenho aprovado</option>
-            <option value="sessão">Sessão</option>
-            <option value="retoque">Retoque</option>
-          </select>
-        </label>
-        <label>
-          Data
-          <input type="date" value={data} onChange={(evento) => definirData(evento.target.value)} required />
-        </label>
-        <label>
-          Observação
-          <textarea
-            value={observacao}
-            onChange={(evento) => definirObservacao(evento.target.value)}
-            placeholder="Anote o que foi feito neste passo"
-          />
-        </label>
-        <button className="botao-principal" type="submit" disabled={estado === "carregando"}>
-          {estado === "carregando" ? "Salvando passo…" : "Registrar passo"}
+      <form className="formulario formulario-andamento" onSubmit={atualizarAndamento}>
+        <fieldset className="seletor-etapa">
+          <legend>Etapa atual</legend>
+          <p>Escolha em qual etapa este pedido está.</p>
+          <div className="opcoes-etapa">
+            {opcoesEtapa.map((opcao, indice) => (
+              <button
+                className={etapaSelecionada === opcao.etapa ? "opcao-etapa selecionada" : "opcao-etapa"}
+                type="button"
+                key={opcao.etapa}
+                aria-pressed={etapaSelecionada === opcao.etapa}
+                onClick={() => definirEtapaSelecionada(opcao.etapa)}
+              >
+                <span className="numero-etapa">0{indice + 1}</span>
+                <strong>{opcao.nome}</strong>
+                <small>{opcao.detalhe}</small>
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        <button
+          className="botao-principal"
+          type="submit"
+          disabled={estado === "carregando" || !opcaoSelecionada || etapaSelecionada === tatuagem.etapa}
+        >
+          {estado === "carregando" ? "Salvando…" : etapaSelecionada === tatuagem.etapa ? "Etapa atual selecionada" : "Salvar etapa"}
         </button>
       </form>
 
       {estado === "erro" && <p className="aviso erro" role="alert">{erro}</p>}
       {mensagem && <p className="aviso sucesso" role="status">{mensagem}</p>}
+
+      {passos.length > 0 && (
+        <section className="historico historico-ficha">
+          <div className="cabecalho-historico-simples">
+            <h2>Atualizações</h2>
+            <button className="botao-perigo" type="button" disabled={limpandoHistorico} onClick={limparHistorico}>
+              {limpandoHistorico ? "Limpando…" : "Limpar histórico"}
+            </button>
+          </div>
+          <ul className="atualizacoes-simples">
+            {passos.map((passo) => (
+              <li key={passo.id}>{nomeEtapa(passo.etapa_atualizada || passo.tipo)} · {new Date(`${passo.data}T12:00:00`).toLocaleDateString("pt-BR")}</li>
+            ))}
+          </ul>
+        </section>
+      )}
     </section>
   );
 }

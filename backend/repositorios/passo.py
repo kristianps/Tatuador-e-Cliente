@@ -22,3 +22,10 @@ def listar_por_tatuagem(tatuagem_id: int) -> list:
             resultado.append(passo)
 
     return resultado
+
+
+# Apaga todos os registros do histórico de uma tatuagem e informa quantos saíram.
+def descartar_por_tatuagem(tatuagem_id: int) -> int:
+    quantidade_inicial = len(passos)
+    passos[:] = [passo for passo in passos if passo["tatuagem_id"] != tatuagem_id]
+    return quantidade_inicial - len(passos)

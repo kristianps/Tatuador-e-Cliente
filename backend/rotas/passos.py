@@ -45,3 +45,15 @@ def registrar_passo(tatuagem_id: int, dados: PassoEntrada):
         )
 
     return passo
+
+
+# Exclui os passos sem apagar o pedido que aparece na agenda.
+@router.delete("/tatuagens/{tatuagem_id}/passos")
+def limpar_historico(tatuagem_id: int):
+    quantidade = servico_passo.limpar_historico(tatuagem_id)
+    if quantidade is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tatuagem não encontrada.",
+        )
+    return {"apagados": quantidade}
