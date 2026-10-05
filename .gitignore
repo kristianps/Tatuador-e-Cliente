@@ -1,5 +1,8 @@
 ﻿# Arquivos locais e dependências
 backend/.env
+backend/*.db
+backend/*.db-shm
+backend/*.db-wal
 backend/venv/
 backend/.venv/
 frontend/node_modules/

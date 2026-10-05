@@ -351,6 +351,33 @@ h2 { margin: 0; font-size: 19px; }
 .cabecalho-historico-simples { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
 .cabecalho-historico-simples h2 { font-family: Georgia, "Times New Roman", serif; }
 
+/* Celebra uma nova finalização sem interromper a consulta da cliente. */
+.celebracao-finalizacao { position: relative; isolation: isolate; overflow: hidden; margin-bottom: 28px; padding: 26px clamp(20px, 5vw, 38px); color: #fffdfa; border: 1px solid #6d343b; border-radius: 10px; background: radial-gradient(ellipse at 78% 20%, #71343a, transparent 48%), #211c1d; animation: entrada-e-saida-celebracao 4.8s ease both; }
+.celebracao-finalizacao .sobretitulo { position: relative; z-index: 1; margin-bottom: 7px; color: #efaab0; }
+.celebracao-finalizacao h2, .celebracao-finalizacao > p:last-of-type { position: relative; z-index: 1; }
+.celebracao-finalizacao h2 { max-width: 620px; font-family: Georgia, "Times New Roman", serif; font-size: clamp(24px, 4vw, 34px); }
+.celebracao-finalizacao > p:last-of-type { margin: 9px 0 0; color: #e1d4d0; font-size: 14px; }
+.confetes { position: absolute; z-index: 0; inset: 0; overflow: hidden; pointer-events: none; }
+.confete { position: absolute; top: -14px; width: 8px; height: 13px; border-radius: 2px; background: #d65a66; animation: cair-confete 2.6s ease-in both; }
+.confete-1 { width: 7px; height: 7px; border-radius: 50%; background: #e6c486; }
+.confete-2 { width: 6px; height: 11px; background: #f6eee7; }
+.confete-3 { width: 9px; height: 9px; border-radius: 50%; background: #a9b99d; }
+.fechar-celebracao { position: absolute; z-index: 2; top: 10px; right: 12px; width: 34px; height: 34px; color: #fffdfa; border: 1px solid rgb(255 255 255 / 30%); border-radius: 50%; background: rgb(0 0 0 / 15%); font-size: 22px; line-height: 1; }
+.fechar-celebracao:hover { background: rgb(0 0 0 / 35%); }
+@keyframes cair-confete {
+  0% { opacity: 0; transform: translateY(-10px) rotate(0deg); }
+  12% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(250px) rotate(500deg); }
+}
+@keyframes entrada-e-saida-celebracao {
+  0% { opacity: 0; transform: translateY(14px) scale(.985); }
+  10%, 82% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-8px) scale(.99); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .celebracao-finalizacao, .confete { animation: none; }
+}
+
 /* Empilha os campos e cartões em telas estreitas para preservar a leitura no celular. */
 @media (max-width: 620px) {
   .cabecalho { padding: 17px 18px; gap: 4px 12px; }
@@ -402,4 +429,5 @@ h2 { margin: 0; font-size: 19px; }
   .opcoes-etapa { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .opcao-etapa { min-height: 116px; }
   .formulario-andamento > .botao-principal { width: 100%; }
+  .celebracao-finalizacao { padding: 24px 18px; }
 }

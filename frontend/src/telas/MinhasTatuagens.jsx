@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+const chaveCelebracoes = (clienteId) => `pereiratatto-finalizadas-${clienteId}`;
+
 // Mostra os pedidos da cliente e o histórico da tatuagem que ela abrir.
 function MinhasTatuagens({ perfil, enderecoApi }) {
   // useState guarda a lista, o histórico selecionado e os estados de carregamento.
@@ -10,25 +12,76 @@ function MinhasTatuagens({ perfil, enderecoApi }) {
   const [passos, definirPassos] = useState([]);
   const [estadoHistorico, definirEstadoHistorico] = useState("pronto");
   const [erroHistorico, definirErroHistorico] = useState("");
+  const [celebracao, definirCelebracao] = useState(null);
 
-  // useEffect repete a consulta quando o perfil muda; fetch mantém os estados de tela claros.
+  // Atualiza a lista periodicamente e celebra cada pedido finalizado uma única vez.
   useEffect(() => {
     definirEstado("carregando");
-    fetch(`${enderecoApi}/tatuagens?cliente_id=${perfil.id}`)
-      .then((resposta) => {
-        if (!resposta.ok) {
-          throw new Error("Não foi possível carregar suas tatuagens.");
-        }
-        return resposta.json();
-      })
-      .then((lista) => {
-        definirTatuagens(lista);
-        definirEstado("pronto");
-      })
-      .catch((erroBusca) => {
-        definirErro(erroBusca.message);
-        definirEstado("erro");
-      });
+    let ativo = true;
+    let consultando = false;
+    const IDsVistosNaSessao = new Set();
+
+    function consultarPedidos() {
+      if (consultando) return;
+      consultando = true;
+
+      fetch(`${enderecoApi}/tatuagens?cliente_id=${perfil.id}`)
+        .then((resposta) => {
+          if (!resposta.ok) throw new Error("Não foi possível carregar suas tatuagens.");
+          return resposta.json();
+        })
+        .then((lista) => {
+          if (!ativo) return;
+
+          definirTatuagens(lista);
+          definirEstado("pronto");
+          definirErro("");
+
+          const chave = chaveCelebracoes(perfil.id);
+          let IDsCelebrados = [];
+          try {
+            const armazenados = JSON.parse(localStorage.getItem(chave) || "[]");
+            IDsCelebrados = Array.isArray(armazenados) ? armazenados : [];
+          } catch {
+            IDsCelebrados = [];
+          }
+
+          const finalizados = lista.filter((tatuagem) => tatuagem.etapa === "finalizada");
+          const identificador = (tatuagem) => String(tatuagem.id);
+          const jáCelebrados = new Set([...IDsCelebrados, ...IDsVistosNaSessao]);
+          const novos = finalizados.filter((tatuagem) => !jáCelebrados.has(identificador(tatuagem)));
+
+          if (novos.length > 0) {
+            definirCelebracao({ chave: Date.now(), quantidade: novos.length });
+            novos.forEach((tatuagem) => IDsVistosNaSessao.add(identificador(tatuagem)));
+            const IDsAtualizados = [...new Set([
+              ...IDsCelebrados,
+              ...finalizados.map(identificador),
+            ])];
+            try {
+              localStorage.setItem(chave, JSON.stringify(IDsAtualizados));
+            } catch {
+              // A comemoração continua disponível mesmo se o navegador bloquear o armazenamento local.
+            }
+          }
+        })
+        .catch((erroBusca) => {
+          if (!ativo) return;
+          definirErro(erroBusca.message);
+          definirEstado("erro");
+        })
+        .finally(() => {
+          consultando = false;
+        });
+    }
+
+    consultarPedidos();
+    const intervalo = window.setInterval(consultarPedidos, 5000);
+
+    return () => {
+      ativo = false;
+      window.clearInterval(intervalo);
+    };
   }, [enderecoApi, perfil.id]);
 
   // Busca os passos de uma tatuagem para exibir o histórico dentro desta tela.
@@ -72,6 +125,31 @@ function MinhasTatuagens({ perfil, enderecoApi }) {
 
   return (
     <section className="painel">
+      {celebracao && (
+        <section
+          key={celebracao.chave}
+          className="celebracao-finalizacao"
+          role="status"
+          aria-live="polite"
+          onAnimationEnd={(evento) => {
+            if (evento.target === evento.currentTarget) definirCelebracao(null);
+          }}
+        >
+          <div className="confetes" aria-hidden="true">
+            {Array.from({ length: 24 }, (_, indice) => (
+              <span
+                className={`confete confete-${indice % 4}`}
+                key={indice}
+                style={{ left: `${(indice * 43) % 100}%`, animationDelay: `${(indice % 8) * 0.09}s` }}
+              />
+            ))}
+          </div>
+          <button className="fechar-celebracao" type="button" onClick={() => definirCelebracao(null)} aria-label="Fechar comemoração">×</button>
+          <p className="sobretitulo">ETAPA CONCLUÍDA</p>
+          <h2>{celebracao.quantidade === 1 ? "Sua tatuagem está finalizada!" : `${celebracao.quantidade} tatuagens finalizadas!`}</h2>
+          <p>Obrigado por confiar sua ideia à PereiraTatto.</p>
+        </section>
+      )}
       <p className="sobretitulo">ACOMPANHAMENTO</p>
       <h1>Minhas tatuagens</h1>
       <p className="introducao">Veja a etapa atual e abra uma tatuagem para consultar o histórico.</p>
