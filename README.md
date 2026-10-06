@@ -21,7 +21,7 @@ No PowerShell, a partir da raiz do repositório:
 cd backend
 python -m venv venv
 .\venv\Scripts\Activate.ps1
-pip install "fastapi[standard]" python-dotenv
+pip install "fastapi[standard]" python-dotenv mysql-connector-python
 if (-not (Test-Path .env)) { Copy-Item .env.exemplo .env }
 ```
 
