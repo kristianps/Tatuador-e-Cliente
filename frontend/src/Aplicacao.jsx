@@ -7,7 +7,9 @@ import PedirTatuagem from "./telas/PedirTatuagem.jsx";
 
 const enderecoApi = "http://127.0.0.1:8000";
 
-// Mantém somente as onze referências do catálogo que já têm imagem de tatuagem ou flash.
+// NOVIDADE DA AULA 08: antes do login real, o sistema ainda simula o acesso por perfil.
+// No futuro, essa seleção vai virar cadastro com senha protegida e login com autenticação.
+// A ideia da aula é separar "quem é a pessoa" da "o que ela pode ver e fazer".
 const figurasIniciais = [
   { id: "rosa", nome: "Rosa", imagem: "/decalques/rosa-foto.jpg" },
   { id: "dragao", nome: "Dragão", imagem: "/decalques/dragao.jpg" },
@@ -25,10 +27,14 @@ const figurasIniciais = [
 // Apresenta a escolha de perfil e as duas telas correspondentes a cada pessoa.
 function Aplicacao() {
   // useState guarda escolhas que mudam e faz a tela ser atualizada quando elas mudam.
+  // NOVIDADE DA AULA 08: este estado representa a sessão atual do usuário.
+  // Mais tarde será substituído por um login real com senha, token e sessão autenticada.
   const [perfilId, definirPerfilId] = useState("1");
   const [telaAtual, definirTelaAtual] = useState("pedir");
   const [tatuagemId, definirTatuagemId] = useState(null);
 
+  // NOVIDADE DA AULA 08: a aplicação já diferencia perfis de cliente e tatuador.
+  // A mesma interface pode mostrar telas e permissões diferentes conforme o tipo do perfil.
   const perfis = [
     { id: "1", nome: "Bruna — cliente", tipo: "cliente" },
     { id: "2", nome: "Vitor — tatuador", tipo: "tatuador" },
@@ -36,6 +42,8 @@ function Aplicacao() {
   const perfil = perfis.find((item) => item.id === perfilId);
 
   // Troca o perfil e abre a primeira tela adequada a cada tipo de pessoa.
+  // NOVIDADE DA AULA 08: depois da autenticação real, aqui entrará a lógica de login,
+  // validação de senha e redirecionamento para a área correta do usuário.
   function trocarPerfil(novoPerfilId) {
     const novoPerfil = perfis.find((item) => item.id === novoPerfilId);
 
@@ -56,6 +64,8 @@ function Aplicacao() {
   }
 
   // Mostra a navegação e o componente da tela escolhida para o perfil.
+  // NOVIDADE DA AULA 08: essa camada prepara a ideia de "tela de cada perfil".
+  // Em produção, as telas e os dados devem ficar protegidos por autenticação.
   function mostrarTela() {
     if (perfil.tipo === "cliente" && telaAtual === "pedir") {
       return (
