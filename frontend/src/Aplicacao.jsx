@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Agenda from "./telas/Agenda.jsx";
 import Ficha from "./telas/Ficha.jsx";
@@ -7,9 +7,6 @@ import PedirTatuagem from "./telas/PedirTatuagem.jsx";
 
 const enderecoApi = "http://127.0.0.1:8000";
 
-// NOVIDADE DA AULA 08: antes do login real, o sistema ainda simula o acesso por perfil.
-// No futuro, essa seleção vai virar cadastro com senha protegida e login com autenticação.
-// A ideia da aula é separar "quem é a pessoa" da "o que ela pode ver e fazer".
 const figurasIniciais = [
   { id: "rosa", nome: "Rosa", imagem: "/decalques/rosa-foto.jpg" },
   { id: "dragao", nome: "Dragão", imagem: "/decalques/dragao.jpg" },
@@ -24,138 +21,166 @@ const figurasIniciais = [
   { id: "naval", nome: "Composição naval", imagem: "/decalques/naval_recorte.jpg" },
 ];
 
-// Apresenta a escolha de perfil e as duas telas correspondentes a cada pessoa.
 function Aplicacao() {
-  // useState guarda escolhas que mudam e faz a tela ser atualizada quando elas mudam.
-  // NOVIDADE DA AULA 08: este estado representa a sessão atual do usuário.
-  // Mais tarde será substituído por um login real com senha, token e sessão autenticada.
-  const [perfilId, definirPerfilId] = useState("1");
+  const [email, definirEmail] = useState("bruna@pereiratatto.com");
+  const [senha, definirSenha] = useState("bruna123");
+  const [usuario, definirUsuario] = useState(null);
+  const [estadoLogin, definirEstadoLogin] = useState("pronto");
+  const [erroLogin, definirErroLogin] = useState("");
   const [telaAtual, definirTelaAtual] = useState("pedir");
   const [tatuagemId, definirTatuagemId] = useState(null);
 
-  // NOVIDADE DA AULA 08: a aplicação já diferencia perfis de cliente e tatuador.
-  // A mesma interface pode mostrar telas e permissões diferentes conforme o tipo do perfil.
-  const perfis = [
-    { id: "1", nome: "Bruna — cliente", tipo: "cliente" },
-    { id: "2", nome: "Vitor — tatuador", tipo: "tatuador" },
-  ];
-  const perfil = perfis.find((item) => item.id === perfilId);
+  useEffect(() => {
+    const token = localStorage.getItem("pereiratatto-token");
+    const usuarioSalvo = localStorage.getItem("pereiratatto-usuario");
 
-  // Troca o perfil e abre a primeira tela adequada a cada tipo de pessoa.
-  // NOVIDADE DA AULA 08: depois da autenticação real, aqui entrará a lógica de login,
-  // validação de senha e redirecionamento para a área correta do usuário.
+    if (token && usuarioSalvo) {
+      try {
+        definirUsuario(JSON.parse(usuarioSalvo));
+      } catch {
+        localStorage.removeItem("pereiratatto-token");
+        localStorage.removeItem("pereiratatto-usuario");
+      }
+    }
+  }, []);
+
   function trocarPerfil(novoPerfilId) {
-    const novoPerfil = perfis.find((item) => item.id === novoPerfilId);
+    const perfil = novoPerfilId === "cliente" ? "cliente" : "tatuador";
+    const dados = perfil === "cliente"
+      ? { id: 1, nome: "Bruna", perfil: "cliente" }
+      : { id: 2, nome: "Vitor", perfil: "tatuador" };
 
-    definirPerfilId(novoPerfilId);
+    definirUsuario(dados);
     definirTatuagemId(null);
-    definirTelaAtual(novoPerfil.tipo === "cliente" ? "pedir" : "agenda");
+    definirTelaAtual(perfil === "cliente" ? "pedir" : "agenda");
+    localStorage.setItem("pereiratatto-usuario", JSON.stringify(dados));
   }
 
-  // Abre a ficha selecionada a partir de uma tatuagem da agenda.
+  function fazerLogin(evento) {
+    evento.preventDefault();
+    definirEstadoLogin("carregando");
+    definirErroLogin("");
+
+    fetch(`${enderecoApi}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, senha }),
+    })
+      .then((resposta) => {
+        if (!resposta.ok) {
+          return resposta.json().then((detalhe) => {
+            throw new Error(detalhe.detail || "Credenciais inválidas.");
+          });
+        }
+        return resposta.json();
+      })
+      .then((resultado) => {
+        localStorage.setItem("pereiratatto-token", resultado.access_token);
+        localStorage.setItem("pereiratatto-usuario", JSON.stringify(resultado.usuario));
+        definirUsuario(resultado.usuario);
+        definirEstadoLogin("pronto");
+        definirTelaAtual(resultado.usuario.perfil === "cliente" ? "pedir" : "agenda");
+      })
+      .catch((erro) => {
+        definirErroLogin(erro.message);
+        definirEstadoLogin("erro");
+      });
+  }
+
+  function realizarLogout() {
+    localStorage.removeItem("pereiratatto-token");
+    localStorage.removeItem("pereiratatto-usuario");
+    definirUsuario(null);
+    definirTelaAtual("pedir");
+    definirTatuagemId(null);
+  }
+
   function abrirFicha(id) {
     definirTatuagemId(id);
     definirTelaAtual("ficha");
   }
 
-  // Volta para a agenda sem perder o perfil de gestão escolhido.
   function voltarParaAgenda() {
     definirTelaAtual("agenda");
   }
 
-  // Mostra a navegação e o componente da tela escolhida para o perfil.
-  // NOVIDADE DA AULA 08: essa camada prepara a ideia de "tela de cada perfil".
-  // Em produção, as telas e os dados devem ficar protegidos por autenticação.
   function mostrarTela() {
-    if (perfil.tipo === "cliente" && telaAtual === "pedir") {
+    if (!usuario) {
       return (
-        <PedirTatuagem
-          perfil={perfil}
-          enderecoApi={enderecoApi}
-          figuras={figurasIniciais}
-        />
+        <section className="painel">
+          <p className="sobretitulo">ACESSO AO SISTEMA</p>
+          <h1>Entrar no PereiraTatto</h1>
+          <form className="formulario" onSubmit={fazerLogin}>
+            <label className="campo-local-corpo">
+              E-mail
+              <input type="email" value={email} onChange={(evento) => definirEmail(evento.target.value)} required />
+            </label>
+            <label className="campo-local-corpo">
+              Senha
+              <input type="password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required />
+            </label>
+            <button className="botao-principal" type="submit" disabled={estadoLogin === "carregando"}>
+              {estadoLogin === "carregando" ? "Entrando…" : "Entrar"}
+            </button>
+          </form>
+          {erroLogin && <p className="aviso erro" role="alert">{erroLogin}</p>}
+          <p className="introducao">Demo: Bruna — bruna@pereiratatto.com / bruna123 ou Vitor — vitor@pereiratatto.com / vitor123</p>
+        </section>
       );
     }
 
-    if (perfil.tipo === "cliente") {
-      return <MinhasTatuagens perfil={perfil} enderecoApi={enderecoApi} />;
+    if (usuario.perfil === "cliente" && telaAtual === "pedir") {
+      return <PedirTatuagem perfil={usuario} enderecoApi={enderecoApi} figuras={figurasIniciais} />;
+    }
+
+    if (usuario.perfil === "cliente") {
+      return <MinhasTatuagens perfil={usuario} enderecoApi={enderecoApi} />;
     }
 
     if (telaAtual === "ficha") {
-      return (
-        <Ficha
-          tatuagemId={tatuagemId}
-          enderecoApi={enderecoApi}
-          aoVoltar={voltarParaAgenda}
-        />
-      );
+      return <Ficha tatuagemId={tatuagemId} enderecoApi={enderecoApi} aoVoltar={voltarParaAgenda} />;
     }
 
-    return (
-      <Agenda enderecoApi={enderecoApi} aoAbrirFicha={abrirFicha} />
-    );
+    return <Agenda enderecoApi={enderecoApi} aoAbrirFicha={abrirFicha} />;
   }
 
   return (
     <div className="aplicacao">
       <header className="cabecalho">
-        <a className="marca" href="#inicio" onClick={() => definirTelaAtual(perfil.tipo === "cliente" ? "pedir" : "agenda")}>
+        <a className="marca" href="#inicio" onClick={() => definirTelaAtual(usuario?.perfil === "cliente" ? "pedir" : "agenda")}>
           Pereira<span>Tatto</span>
         </a>
         <p className="assinatura">ESTÚDIO DE TATUAGEM</p>
 
-        <div className="seletor-perfil" role="group" aria-label="Escolha como entrar">
-          <span className="rotulo-perfil">Acessar como</span>
-          <div className="opcoes-perfil">
-            {perfis.map((item) => (
-              <button
-                className={item.id === perfilId ? "opcao-perfil ativa" : "opcao-perfil"}
-                type="button"
-                key={item.id}
-                aria-pressed={item.id === perfilId}
-                onClick={() => trocarPerfil(item.id)}
-              >
-                <span className="icone-perfil" aria-hidden="true">{item.tipo === "cliente" ? "B" : "V"}</span>
-                <span><strong>{item.tipo === "cliente" ? "Bruna" : "Vitor"}</strong><small>{item.tipo === "cliente" ? "Cliente" : "Tatuador"}</small></span>
+        {usuario && (
+          <div className="seletor-perfil" role="group" aria-label="Sessão do usuário">
+            <span className="rotulo-perfil">Sessão ativa</span>
+            <div className="opcoes-perfil">
+              <button className="opcao-perfil ativa" type="button">
+                <span className="icone-perfil" aria-hidden="true">{usuario.perfil === "cliente" ? "B" : "V"}</span>
+                <span><strong>{usuario.nome}</strong><small>{usuario.perfil === "cliente" ? "Cliente" : "Tatuador"}</small></span>
               </button>
-            ))}
+            </div>
+            <button className="botao-secundario" type="button" onClick={realizarLogout}>Sair</button>
           </div>
-        </div>
+        )}
       </header>
 
-      <nav className="navegacao" aria-label="Navegação principal">
-        {perfil.tipo === "cliente" ? (
-          <>
-            <button
-              className={telaAtual === "pedir" ? "aba ativa" : "aba"}
-              onClick={() => definirTelaAtual("pedir")}
-            >
-              Pedir tatuagem
-            </button>
-            <button
-              className={telaAtual === "minhas" ? "aba ativa" : "aba"}
-              onClick={() => definirTelaAtual("minhas")}
-            >
-              Minhas tatuagens
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              className={telaAtual === "agenda" ? "aba ativa" : "aba"}
-              onClick={() => definirTelaAtual("agenda")}
-            >
-              A agenda
-            </button>
-            <button
-              className={telaAtual === "ficha" ? "aba ativa" : "aba"}
-              onClick={() => definirTelaAtual("ficha")}
-            >
-              A ficha
-            </button>
-          </>
-        )}
-      </nav>
+      {usuario && (
+        <nav className="navegacao" aria-label="Navegação principal">
+          {usuario.perfil === "cliente" ? (
+            <>
+              <button className={telaAtual === "pedir" ? "aba ativa" : "aba"} onClick={() => definirTelaAtual("pedir")}>Pedir tatuagem</button>
+              <button className={telaAtual === "minhas" ? "aba ativa" : "aba"} onClick={() => definirTelaAtual("minhas")}>Minhas tatuagens</button>
+            </>
+          ) : (
+            <>
+              <button className={telaAtual === "agenda" ? "aba ativa" : "aba"} onClick={() => definirTelaAtual("agenda")}>A agenda</button>
+              <button className={telaAtual === "ficha" ? "aba ativa" : "aba"} onClick={() => definirTelaAtual("ficha")}>A ficha</button>
+            </>
+          )}
+        </nav>
+      )}
 
       <main className="conteudo" id="inicio">
         {mostrarTela()}

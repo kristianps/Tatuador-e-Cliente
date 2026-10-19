@@ -21,7 +21,7 @@ No PowerShell, a partir da raiz do repositório:
 cd backend
 python -m venv venv
 .\venv\Scripts\Activate.ps1
-pip install "fastapi[standard]" python-dotenv mysql-connector-python
+pip install "fastapi[standard]" python-dotenv mysql-connector-python PyJWT
 if (-not (Test-Path .env)) { Copy-Item .env.exemplo .env }
 ```
 
@@ -33,6 +33,15 @@ fastapi dev main.py
 
 A documentação interativa da API fica em [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
 
+## Login do sistema
+
+O sistema agora usa autenticação por e-mail e senha. A API cria os usuários de demonstração automaticamente quando inicia:
+
+- Bruna — cliente — bruna@pereiratatto.com / bruna123
+- Vitor — tatuador — vitor@pereiratatto.com / vitor123
+
+Ao logar, a API retorna um token JWT que o frontend salva no `localStorage` e envia em `Authorization: Bearer ...` nas requisições protegidas.
+
 ## Como executar o frontend
 
 Em outro terminal PowerShell, a partir da raiz do repositório:
@@ -43,23 +52,23 @@ npm install
 npm run dev -- --host 127.0.0.1
 ```
 
-Abra [http://127.0.0.1:5173](http://127.0.0.1:5173). Escolha Bruna para pedir e acompanhar tatuagens ou Vitor para consultar a agenda e registrar passos.
+Abra [http://127.0.0.1:5173](http://127.0.0.1:5173). A tela inicial agora pede login com e-mail e senha antes de exibir as áreas do cliente ou tatuador.
 
 ## Fluxo manual para conferir a aplicação
 
-1. Com os dois servidores ligados, escolha Bruna, selecione uma ou mais refer?ncias visuais e escolha a regiao do corpo no menu.
+1. Faça login com Bruna e envie uma ou mais referências visuais e a região do corpo.
 2. Em **Minhas tatuagens**, confira a etapa inicial e abra o histórico.
-3. Escolha Vitor, abra **A agenda** e selecione a tatuagem.
+3. Faça logout e entre como Vitor para consultar a agenda e registrar passos.
 4. Na ficha, registre o desenho aprovado e depois uma ou mais sessões.
 5. Após a cicatrização, registre o retoque e confira a etapa **finalizada**.
 6. Volte para Bruna e consulte o histórico atualizado.
 
-Os dados ficam em listas na memória e são apagados quando o backend é reiniciado. A cartilha não define um campo ou passo separado para registrar a cicatrização; por isso, Vitor confirma esse momento antes de registrar o retoque. O backend confere que já houve pelo menos uma sessão.
+Os dados ficam em MySQL local e são persistidos enquanto o banco estiver ativo. O backend valida a sessão por token e cada perfil tem acesso de acordo com sua autenticação.
 
 ## Documentos do projeto
 
 - [Cartilha](docs/CARTILHA.md)
 - [Briefing](docs/BRIEFING.md)
 - [Styleguide](docs/styleguide/STYLEGUIDE.md)
-- [Cr�ditos e licen�as das imagens](docs/CREDITOS_IMAGENS.md)
+- [Créditos e licenças das imagens](docs/CREDITOS_IMAGENS.md)
 - [Conceito da marca](docs/marca/pereiratatto-conceito.svg)

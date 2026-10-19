@@ -14,3 +14,7 @@ MYSQL_PORT = int(os.getenv("MYSQL_PORT") or "3306")
 MYSQL_DATABASE = os.getenv("MYSQL_DATABASE") or "pereiratatto"
 MYSQL_USER = os.getenv("MYSQL_USER") or "pereiratatto_app"
 MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD") or ""
+
+# Configura a autenticação por JWT usada no login e nas rotas protegidas.
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY") or "pereiratatto-secreto-demo"
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM") or "HS256"
