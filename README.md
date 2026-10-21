@@ -72,3 +72,25 @@ Os dados ficam em MySQL local e são persistidos enquanto o banco estiver ativo.
 - [Styleguide](docs/styleguide/STYLEGUIDE.md)
 - [Créditos e licenças das imagens](docs/CREDITOS_IMAGENS.md)
 - [Conceito da marca](docs/marca/pereiratatto-conceito.svg)
+
+## Aula 10 — da ideia ao plano com IA
+
+A aula apresentou a ideia de partir do briefing e usá-lo como base para planejar o produto com ajuda da IA. A proposta não foi criar uma funcionalidade nova do sistema na hora, e sim:
+
+- revisar o problema e a persona;
+- identificar o que é essencial para a entrega;
+- transformar a ideia em um roadmap mais claro;
+- alinhar frontend, backend e regras de negócio antes de continuar codificando.
+
+Para o PereiraTatto, isso significa manter o foco em:
+- cliente e tatuador como usuários principais;
+- acompanhamento da tatuagem como funcionalidade central;
+- separação do que é obrigatório para esta etapa e do que pode entrar depois;
+- uso da IA como apoio ao planejamento e à revisão do projeto.
+
+### Roadmap sugerido
+1. Etapa atual: autenticação, perfis e histórico de tatuagens.
+2. Próxima etapa: revisar o fluxo do usuário e integração frontend/backend.
+3. Etapa seguinte: refinamento de UX, validações e melhorias de processo.
+
+Esse tipo de aula é importante porque ajuda a transformar a ideia em um plano sustentável, sem perder a regra do produto.
