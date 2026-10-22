@@ -10,6 +10,16 @@ from repositorios import usuario as repositorio_usuario
 
 security = HTTPBearer()
 
+# NOVO: definição dos grupos do sistema. Cada persona do projeto vira um grupo.
+# "cliente" e "tatuador" representam os dois papéis principais do produto.
+GRUPO_CLIENTE = "cliente"
+GRUPO_TATUADOR = "tatuador"
+
+# NOVO: conjunto com os grupos que possuem acesso total ao sistema neste momento.
+# Como o projeto tem duas personas e cada uma deve ter acesso completo às rotas essenciais,
+# ambos os perfis são liberados para todas as operações da API principal.
+GRUPOS_COM_ACESSO_TOTAL = {GRUPO_CLIENTE, GRUPO_TATUADOR}
+
 
 # Usa um hash PBKDF2 para manter a senha fora do código e permitir a validação no login.
 def _hash_senha(senha: str) -> str:
@@ -74,3 +84,26 @@ def obter_usuario_atual(
         )
 
     return usuario
+
+
+# NOVO: dependência de autorização por grupo.
+# Essa função atua como um guard de acesso: primeiro valida o token e depois verifica
+# se o perfil do usuário pertence ao conjunto de grupos permitidos para a rota.
+def requerer_perfil(grupos_permitidos: set[str]):
+    def dependencia(usuario: dict = Depends(obter_usuario_atual)) -> dict:
+        perfil_usuario = usuario.get("perfil")
+
+        # NOVO: se o perfil do usuário não estiver na lista permitida, negamos o acesso.
+        # Esse bloqueio é específico do assunto de grupos de usuários, então a regra fica bem clara.
+        if perfil_usuario not in grupos_permitidos:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=(
+                    f"Acesso negado para o perfil '{perfil_usuario}'. "
+                    "Este usuário não pertence ao grupo autorizado para esta rota."
+                ),
+            )
+
+        return usuario
+
+    return dependencia
