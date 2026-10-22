@@ -28,7 +28,10 @@ function Agenda({ enderecoApi, aoAbrirFicha }) {
 
   // Carrega os pedidos; o filtro e a busca são aplicados nesta tela.
   useEffect(() => {
-    fetch(`${enderecoApi}/tatuagens`)
+    const token = localStorage.getItem("pereiratatto-token");
+    fetch(`${enderecoApi}/tatuagens`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
       .then((resposta) => {
         if (!resposta.ok) throw new Error("Não foi possível carregar a agenda.");
         return resposta.json();
@@ -56,9 +59,13 @@ function Agenda({ enderecoApi, aoAbrirFicha }) {
     );
     if (!confirmou) return;
 
+    const token = localStorage.getItem("pereiratatto-token");
     definirPedidoDescartando(tatuagem.id);
     definirErroAcao("");
-    fetch(`${enderecoApi}/tatuagens/${tatuagem.id}`, { method: "DELETE" })
+    fetch(`${enderecoApi}/tatuagens/${tatuagem.id}`, {
+      method: "DELETE",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
       .then((resposta) => {
         if (!resposta.ok) throw new Error("Não foi possível descartar este pedido.");
         definirTatuagens((lista) => lista.filter((item) => item.id !== tatuagem.id));

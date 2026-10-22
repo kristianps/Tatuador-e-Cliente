@@ -24,8 +24,11 @@ function MinhasTatuagens({ perfil, enderecoApi }) {
     function consultarPedidos() {
       if (consultando) return;
       consultando = true;
+      const token = localStorage.getItem("pereiratatto-token");
 
-      fetch(`${enderecoApi}/tatuagens?cliente_id=${perfil.id}`)
+      fetch(`${enderecoApi}/tatuagens?cliente_id=${perfil.id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
         .then((resposta) => {
           if (!resposta.ok) throw new Error("Não foi possível carregar suas tatuagens.");
           return resposta.json();
@@ -91,7 +94,10 @@ function MinhasTatuagens({ perfil, enderecoApi }) {
     definirEstadoHistorico("carregando");
     definirErroHistorico("");
 
-    fetch(`${enderecoApi}/tatuagens/${tatuagem.id}/passos?cliente_id=${perfil.id}`)
+    const token = localStorage.getItem("pereiratatto-token");
+    fetch(`${enderecoApi}/tatuagens/${tatuagem.id}/passos?cliente_id=${perfil.id}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
       .then((resposta) => {
         if (!resposta.ok) {
           throw new Error("Não foi possível carregar o histórico.");

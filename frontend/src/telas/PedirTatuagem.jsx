@@ -69,10 +69,15 @@ function PedirTatuagem({ perfil, enderecoApi, figuras }) {
     definirEstado("carregando");
     definirMensagem("");
 
-    // fetch envia o POST em JSON; o then trata resposta.ok e o catch mostra falhas.
+    const token = localStorage.getItem("pereiratatto-token");
+    const cabecalhos = {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
     fetch(`${enderecoApi}/tatuagens`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: cabecalhos,
       body: JSON.stringify({
         cliente_id: Number(perfil.id),
         ideia: partesDaIdeia.join(". "),

@@ -35,12 +35,15 @@ function Ficha({ tatuagemId, enderecoApi, aoVoltar }) {
   useEffect(() => {
     if (tatuagemId === null) return;
 
+    const token = localStorage.getItem("pereiratatto-token");
+    const cabecalhos = token ? { Authorization: `Bearer ${token}` } : {};
+
     definirTatuagem(null);
     definirEstado("carregando");
     definirErro("");
     Promise.all([
-      fetch(`${enderecoApi}/tatuagens/${tatuagemId}`),
-      fetch(`${enderecoApi}/tatuagens/${tatuagemId}/passos`),
+      fetch(`${enderecoApi}/tatuagens/${tatuagemId}`, { headers: cabecalhos }),
+      fetch(`${enderecoApi}/tatuagens/${tatuagemId}/passos`, { headers: cabecalhos }),
     ])
       .then(async ([respostaTatuagem, respostaPassos]) => {
         if (!respostaTatuagem.ok || !respostaPassos.ok) {
@@ -75,9 +78,13 @@ function Ficha({ tatuagemId, enderecoApi, aoVoltar }) {
       .toISOString()
       .slice(0, 10);
 
+    const token = localStorage.getItem("pereiratatto-token");
     fetch(`${enderecoApi}/tatuagens/${tatuagemId}/passos`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify({ tipo: opcaoSelecionada.tipo, data: hoje, observacao: "" }),
     })
       .then((resposta) => {
@@ -110,7 +117,11 @@ function Ficha({ tatuagemId, enderecoApi, aoVoltar }) {
 
     definirLimpandoHistorico(true);
     definirErro("");
-    fetch(`${enderecoApi}/tatuagens/${tatuagemId}/passos`, { method: "DELETE" })
+    const token = localStorage.getItem("pereiratatto-token");
+    fetch(`${enderecoApi}/tatuagens/${tatuagemId}/passos`, {
+      method: "DELETE",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
       .then((resposta) => {
         if (!resposta.ok) throw new Error("Não foi possível limpar este histórico.");
         return resposta.json();
