@@ -4,7 +4,7 @@ from esquemas.usuario import LoginResposta, UsuarioLoginEntrada, UsuarioSaida
 from servicos import usuario as servico_usuario
 
 # APIRouter reúne as rotas de login e sessão do sistema para o main.py registrar.
-router = APIRouter()
+router = APIRouter(tags=["Usuários"])
 
 
 # Autentica usuário com e-mail e senha e devolve um token para as próximas requisições.

@@ -7,7 +7,7 @@ from servicos import passo as servico_passo
 from servicos import usuario as servico_usuario
 
 # APIRouter agrupa os caminhos de passos relacionados a tatuagens.
-router = APIRouter()
+router = APIRouter(tags=["Passos"])
 
 # NOVO: um grupo é a coleção de perfis autorizados para uma determinada área do sistema.
 # Neste projeto, cliente e tatuador têm acesso total aos fluxos de tatuagem e histórico.
