@@ -10,12 +10,13 @@ from rotas import passos, tatuagens, usuarios
 # A API é inicializada com a estrutura necessária para autenticação por JWT e perfil de usuário.
 app = FastAPI()
 
-# Libera requisições apenas para a origem configurada para o frontend.
+# Libera requisições para as origens do frontend em desenvolvimento e em uso local.
+origens_frontend = list(dict.fromkeys(configuracao.ORIGENS_FRONTEND + [configuracao.ORIGEM_FRONTEND]))
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[configuracao.ORIGEM_FRONTEND],
+    allow_origins=origens_frontend,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "DELETE"],
+    allow_methods=["GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS"],
     allow_headers=["*"],
 )
 
