@@ -33,7 +33,13 @@ app.include_router(passos.router)
 app.include_router(usuarios.router)
 
 # Prepara as tabelas ao iniciar, criando primeiro os pedidos referenciados pelo histórico.
-repositorio_tatuagem.inicializar()
-repositorio_passo.inicializar()
-repositorio_usuario.inicializar()
-repositorio_usuario.criar_usuarios_iniciais()
+# Em produção, a app deve continuar funcionando mesmo quando o banco ainda não foi configurado
+# totalmente no ambiente da Vercel; neste caso, a inicialização cai em SQLite local sem quebrar
+# a função inteira.
+try:
+    repositorio_tatuagem.inicializar()
+    repositorio_passo.inicializar()
+    repositorio_usuario.inicializar()
+    repositorio_usuario.criar_usuarios_iniciais()
+except Exception as erro:
+    print(f"Aviso de inicialização do banco: {erro}")

@@ -1,7 +1,10 @@
 from contextlib import closing
 import sqlite3
 
-import mysql.connector
+try:
+    import mysql.connector
+except Exception:  # pragma: no cover - fallback para ambiente sem MySQL
+    mysql = None
 
 import configuracao
 
@@ -11,6 +14,12 @@ def _conectar():
     if configuracao.BANCO_TIPO == "sqlite":
         conexao = sqlite3.connect(configuracao.SQLITE_PATH)
         conexao.row_factory = sqlite3.Row
+        return conexao
+
+    if mysql is None:
+        conexao = sqlite3.connect(configuracao.SQLITE_PATH)
+        conexao.row_factory = sqlite3.Row
+        configuracao.BANCO_TIPO = "sqlite"
         return conexao
 
     try:
