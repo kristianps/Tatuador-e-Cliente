@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 
+import { enderecoApi } from "./api.js";
 import Agenda from "./telas/Agenda.jsx";
 import Ficha from "./telas/Ficha.jsx";
 import MinhasTatuagens from "./telas/MinhasTatuagens.jsx";
 import PedirTatuagem from "./telas/PedirTatuagem.jsx";
-
-const enderecoApi = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 const figurasIniciais = [
   { id: "rosa", nome: "Rosa", imagem: "/decalques/rosa-foto.jpg" },

@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 
+import { enderecoApi } from "../api.js";
+
 const chaveCelebracoes = (clienteId) => `pereiratatto-finalizadas-${clienteId}`;
 
 // Mostra os pedidos da cliente e o histórico da tatuagem que ela abrir.
-function MinhasTatuagens({ perfil, enderecoApi }) {
+function MinhasTatuagens({ perfil }) {
   // useState guarda a lista, o histórico selecionado e os estados de carregamento.
   const [tatuagens, definirTatuagens] = useState([]);
   const [estado, definirEstado] = useState("carregando");

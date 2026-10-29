@@ -5,13 +5,17 @@ from dotenv import load_dotenv
 # Carrega o arquivo local de ambiente; ele permite mudar o endereço do front sem alterar o código.
 load_dotenv()
 
-# Suporta a origem do frontend em 127.0.0.1 ou localhost, como as demos do Vite usam.
+# Suporta a origem do frontend em 127.0.0.1, localhost e também em domínio público da Vercel.
 ORIGENS_FRONTEND = [
     origem.strip()
     for origem in os.getenv("FRONTEND_ORIGENS", "http://127.0.0.1:5173,http://localhost:5173").split(",")
     if origem.strip()
 ]
-ORIGEM_FRONTEND = os.getenv("FRONTEND_ORIGEM") or ORIGENS_FRONTEND[0] if ORIGENS_FRONTEND else "http://127.0.0.1:5173"
+ORIGEM_FRONTEND = os.getenv("FRONTEND_ORIGEM") or (ORIGENS_FRONTEND[0] if ORIGENS_FRONTEND else "http://127.0.0.1:5173")
+
+# Mantém a conexão do banco em uma única variável para o deploy separado na Vercel.
+# Em produção, a API usa a URL do Supabase; os campos MySQL continuam apenas como fallback local.
+URL_DO_BANCO = os.getenv("URL_DO_BANCO", "")
 
 # Usa SQLite como fallback para manter a aplicação funcionando mesmo sem MySQL instalado.
 MYSQL_HOST = os.getenv("MYSQL_HOST") or "localhost"

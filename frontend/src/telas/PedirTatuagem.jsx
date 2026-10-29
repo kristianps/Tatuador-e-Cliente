@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { enderecoApi } from "../api.js";
+
 const locaisDisponiveis = [
   "Antebraço interno",
   "Antebraço externo",
@@ -18,7 +20,7 @@ const locaisDisponiveis = [
 ];
 
 // Permite que a cliente escolha decalques ou envie uma ideia própria ao estúdio.
-function PedirTatuagem({ perfil, enderecoApi, figuras }) {
+function PedirTatuagem({ perfil, figuras }) {
   // useState guarda as referências escolhidas, a ideia livre e os estados do envio.
   const [figurasSelecionadas, definirFigurasSelecionadas] = useState([]);
   const [ideiaLivre, definirIdeiaLivre] = useState("");

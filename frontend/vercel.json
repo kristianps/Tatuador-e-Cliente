@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:caminho*",
+      "destination": "https://NOME-DA-API.vercel.app/:caminho*"
+    },
+    {
+      "source": "/:caminho*",
+      "destination": "/index.html"
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+import { enderecoApi } from "../api.js";
+
 // Os valores de etapa correspondem aos que a API já utiliza.
 const etapas = ["pedida", "desenho aprovado", "em sessões", "finalizada"];
 
@@ -17,7 +19,7 @@ function nomeEtapa(etapa) {
 }
 
 // Reúne os pedidos para o tatuador consultar e abrir cada ficha.
-function Agenda({ enderecoApi, aoAbrirFicha }) {
+function Agenda({ aoAbrirFicha }) {
   const [etapa, definirEtapa] = useState("");
   const [busca, definirBusca] = useState("");
   const [tatuagens, definirTatuagens] = useState([]);
@@ -44,7 +46,7 @@ function Agenda({ enderecoApi, aoAbrirFicha }) {
         definirErro(erroBusca.message);
         definirEstado("erro");
       });
-  }, [enderecoApi]);
+  }, []);
 
   const pedidosVisiveis = tatuagens.filter((tatuagem) => {
     const combinaEtapa = !etapa || tatuagem.etapa === etapa;

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+import { enderecoApi } from "../api.js";
+
 // Mantém os valores que a API espera e apresenta nomes corrigidos na tela.
 const etapas = ["pedida", "desenho aprovado", "em sessões", "finalizada"];
 const opcoesEtapa = [
@@ -22,7 +24,7 @@ function nomeEtapa(etapa) {
 }
 
 // Permite escolher uma etapa independente para cada tatuagem.
-function Ficha({ tatuagemId, enderecoApi, aoVoltar }) {
+function Ficha({ tatuagemId, aoVoltar }) {
   const [tatuagem, definirTatuagem] = useState(null);
   const [passos, definirPassos] = useState([]);
   const [etapaSelecionada, definirEtapaSelecionada] = useState("");
@@ -61,7 +63,7 @@ function Ficha({ tatuagemId, enderecoApi, aoVoltar }) {
         definirErro(erroBusca.message);
         definirEstado("erro");
       });
-  }, [enderecoApi, tatuagemId]);
+  }, [tatuagemId]);
 
   const indiceEtapa = tatuagem ? etapas.indexOf(tatuagem.etapa) : -1;
   const opcaoSelecionada = opcoesEtapa.find((opcao) => opcao.etapa === etapaSelecionada);
