@@ -17,6 +17,16 @@ app = FastAPI(
     ],
 )
 
+
+@app.get("/")
+@app.get("/health")
+def health_check():
+    return {
+        "status": "ok",
+        "service": "tatuador-e-cliente-api",
+        "database": "configured" if configuracao.URL_DO_BANCO else "not-configured",
+    }
+
 # Libera requisições para as origens do frontend em desenvolvimento e em uso local.
 origens_frontend = list(dict.fromkeys(configuracao.ORIGENS_FRONTEND + [configuracao.ORIGEM_FRONTEND]))
 app.add_middleware(
