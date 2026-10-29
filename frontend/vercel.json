@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:caminho*",
-      "destination": "https://NOME-DA-API.vercel.app/:caminho*"
+      "destination": "https://tatuador-e-cliente.vercel.app/:caminho*"
     },
     {
       "source": "/:caminho*",
