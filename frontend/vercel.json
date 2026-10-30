@@ -2,10 +2,10 @@
   "rewrites": [
     {
       "source": "/api/:caminho*",
-      "destination": "https://tatuador-e-cliente.vercel.app/:caminho*"
+      "destination": "https://SEU-DOMINIO-DO-BACKEND.vercel.app/:caminho*"
     },
     {
-      "source": "/:caminho*",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
