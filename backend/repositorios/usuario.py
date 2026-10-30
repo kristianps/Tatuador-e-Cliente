@@ -1,12 +1,8 @@
 from contextlib import closing
 import hashlib
-import sqlite3
-from typing import Optional
 
-try:
-    import mysql.connector
-except Exception:  # pragma: no cover - fallback para ambiente sem MySQL
-    mysql = None
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 import configuracao
 
@@ -22,65 +18,28 @@ def _hash_senha(senha: str) -> str:
     ).hex()
 
 
-# Abre uma conexão com o banco para manter os dados do usuário centralizados na mesma infraestrutura.
 def _conectar():
-    if configuracao.BANCO_TIPO == "sqlite":
-        conexao = sqlite3.connect(configuracao.SQLITE_PATH)
-        conexao.row_factory = sqlite3.Row
-        return conexao
-
-    if mysql is None:
-        conexao = sqlite3.connect(configuracao.SQLITE_PATH)
-        conexao.row_factory = sqlite3.Row
-        configuracao.BANCO_TIPO = "sqlite"
-        return conexao
-
-    try:
-        return mysql.connector.connect(
-            host=configuracao.MYSQL_HOST,
-            port=configuracao.MYSQL_PORT,
-            user=configuracao.MYSQL_USER,
-            password=configuracao.MYSQL_PASSWORD,
-            database=configuracao.MYSQL_DATABASE,
-            charset="utf8mb4",
-        )
-    except mysql.connector.Error:
-        conexao = sqlite3.connect(configuracao.SQLITE_PATH)
-        conexao.row_factory = sqlite3.Row
-        configuracao.BANCO_TIPO = "sqlite"
-        return conexao
+    if not configuracao.URL_DO_BANCO:
+        raise RuntimeError("URL_DO_BANCO não foi configurada. Defina a variável de ambiente no projeto da Vercel.")
+    return psycopg2.connect(configuracao.URL_DO_BANCO)
 
 
 # Cria a tabela de usuários e mantém cada e-mail único para evitar contas duplicadas.
 def inicializar() -> None:
     with closing(_conectar()) as banco:
-        cursor = banco.cursor()
-        if configuracao.BANCO_TIPO == "sqlite":
+        with banco.cursor() as cursor:
             cursor.execute(
                 """
                 CREATE TABLE IF NOT EXISTS usuarios (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nome TEXT NOT NULL,
-                    email TEXT NOT NULL UNIQUE,
-                    senha_hash TEXT NOT NULL,
-                    perfil TEXT NOT NULL
-                )
-                """
-            )
-        else:
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS usuarios (
-                    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    id SERIAL PRIMARY KEY,
                     nome VARCHAR(120) NOT NULL,
                     email VARCHAR(180) NOT NULL UNIQUE,
                     senha_hash VARCHAR(255) NOT NULL,
                     perfil VARCHAR(30) NOT NULL
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                )
                 """
             )
-        banco.commit()
-        cursor.close()
+            banco.commit()
 
 
 # Cria os perfis padrão do sistema, com cliente e tatuador, para a aula de login funcionar no demo.
@@ -91,44 +50,22 @@ def criar_usuarios_iniciais() -> None:
     ]
 
     with closing(_conectar()) as banco:
-        cursor = banco.cursor()
-        for nome, email, senha, perfil in usuarios:
-            if configuracao.BANCO_TIPO == "sqlite":
-                cursor.execute("SELECT * FROM usuarios WHERE email = ?", (email.lower(),))
+        with banco.cursor() as cursor:
+            for nome, email, senha, perfil in usuarios:
+                senha_hash = _hash_senha(senha)
+                cursor.execute(
+                    "SELECT * FROM usuarios WHERE email = %s",
+                    (email.lower(),),
+                )
                 usuario_existente = cursor.fetchone()
-            else:
-                cursor.execute("SELECT * FROM usuarios WHERE email = %s", (email.lower(),))
-                usuario_existente = cursor.fetchone()
-            senha_hash = _hash_senha(senha)
 
-            if usuario_existente is None:
-                if configuracao.BANCO_TIPO == "sqlite":
-                    cursor.execute(
-                        """
-                        INSERT INTO usuarios (nome, email, senha_hash, perfil)
-                        VALUES (?, ?, ?, ?)
-                        """,
-                        (nome, email.lower(), senha_hash, perfil),
-                    )
-                else:
+                if usuario_existente is None:
                     cursor.execute(
                         """
                         INSERT INTO usuarios (nome, email, senha_hash, perfil)
                         VALUES (%s, %s, %s, %s)
                         """,
                         (nome, email.lower(), senha_hash, perfil),
-                    )
-            else:
-                if configuracao.BANCO_TIPO == "sqlite":
-                    cursor.execute(
-                        """
-                        UPDATE usuarios
-                        SET nome = ?,
-                            senha_hash = ?,
-                            perfil = ?
-                        WHERE email = ?
-                        """,
-                        (nome, senha_hash, perfil, email.lower()),
                     )
                 else:
                     cursor.execute(
@@ -141,42 +78,49 @@ def criar_usuarios_iniciais() -> None:
                         """,
                         (nome, senha_hash, perfil, email.lower()),
                     )
-
-        banco.commit()
-        cursor.close()
+            banco.commit()
 
 
 # Busca usando o e-mail para validar o login.
-def buscar_por_email(email: str) -> Optional[dict]:
+def buscar_por_email(email: str):
     with closing(_conectar()) as banco:
-        cursor = banco.cursor()
-        if configuracao.BANCO_TIPO == "sqlite":
-            cursor.execute("SELECT * FROM usuarios WHERE email = ?", (email.lower(),))
+        with banco.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute("SELECT * FROM usuarios WHERE email = %s", (email.lower(),))
             usuario = cursor.fetchone()
-            if usuario is None:
-                return None
-            return {chave: usuario[chave] for chave in usuario.keys()}
-
-        cursor = banco.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM usuarios WHERE email = %s", (email.lower(),))
-        usuario = cursor.fetchone()
-        cursor.close()
-        return usuario
+            return dict(usuario) if usuario is not None else None
 
 
 # Busca pelo identificador para montar a sessão autenticada.
-def buscar_por_id(usuario_id: int) -> Optional[dict]:
+def buscar_por_id(usuario_id: int):
     with closing(_conectar()) as banco:
-        cursor = banco.cursor()
-        if configuracao.BANCO_TIPO == "sqlite":
-            cursor.execute("SELECT * FROM usuarios WHERE id = ?", (usuario_id,))
+        with banco.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute("SELECT * FROM usuarios WHERE id = %s", (usuario_id,))
             usuario = cursor.fetchone()
-            if usuario is None:
-                return None
-            return {chave: usuario[chave] for chave in usuario.keys()}
+            return dict(usuario) if usuario is not None else None
 
-        cursor = banco.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM usuarios WHERE id = %s", (usuario_id,))
-        usuario = cursor.fetchone()
-        cursor.close()
-        return usuario
+
+# Cria uma nova conta para o sistema e retorna o usuário salvo.
+def criar_usuario(nome: str, email: str, senha: str, perfil: str = "cliente"):
+    email_normalizado = email.lower().strip()
+    senha_hash = _hash_senha(senha)
+
+    with closing(_conectar()) as banco:
+        with banco.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                "SELECT * FROM usuarios WHERE email = %s",
+                (email_normalizado,),
+            )
+            if cursor.fetchone() is not None:
+                raise ValueError("Já existe uma conta cadastrada com este e-mail.")
+
+            cursor.execute(
+                """
+                INSERT INTO usuarios (nome, email, senha_hash, perfil)
+                VALUES (%s, %s, %s, %s)
+                RETURNING id, nome, email, perfil
+                """,
+                (nome.strip(), email_normalizado, senha_hash, perfil.lower()),
+            )
+            usuario = cursor.fetchone()
+            banco.commit()
+            return dict(usuario)

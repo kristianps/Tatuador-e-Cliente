@@ -7,6 +7,13 @@ class UsuarioLoginEntrada(BaseModel):
     senha: str = Field(min_length=4)
 
 
+class UsuarioCadastroEntrada(BaseModel):
+    nome: str = Field(min_length=2, max_length=120)
+    email: EmailStr
+    senha: str = Field(min_length=6, max_length=100)
+    perfil: str = "cliente"
+
+
 class UsuarioSaida(BaseModel):
     id: int
     nome: str

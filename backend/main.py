@@ -42,14 +42,16 @@ app.include_router(tatuagens.router)
 app.include_router(passos.router)
 app.include_router(usuarios.router)
 
-# Prepara as tabelas ao iniciar, criando primeiro os pedidos referenciados pelo histórico.
-# Em produção, a app deve continuar funcionando mesmo quando o banco ainda não foi configurado
-# totalmente no ambiente da Vercel; neste caso, a inicialização cai em SQLite local sem quebrar
-# a função inteira.
-try:
-    repositorio_tatuagem.inicializar()
-    repositorio_passo.inicializar()
-    repositorio_usuario.inicializar()
-    repositorio_usuario.criar_usuarios_iniciais()
-except Exception as erro:
-    print(f"Aviso de inicialização do banco: {erro}")
+# Inicializa apenas quando a URL do PostgreSQL estiver preenchida.
+# Em desenvolvimento local o .env deve definir URL_DO_BANCO; em deploy do Vercel essa variável
+# precisa ser configurada no painel do projeto, ou o app fica disponível mas sem banco.
+if configuracao.URL_DO_BANCO:
+    try:
+        repositorio_tatuagem.inicializar()
+        repositorio_passo.inicializar()
+        repositorio_usuario.inicializar()
+        repositorio_usuario.criar_usuarios_iniciais()
+    except Exception as erro:
+        print(f"Aviso de inicialização do banco: {erro}")
+else:
+    print("Aviso: URL_DO_BANCO não configurada. O backend iniciou sem conexão ao PostgreSQL.")

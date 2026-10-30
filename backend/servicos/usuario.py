@@ -43,6 +43,21 @@ def autenticar_usuario(email: str, senha: str) -> Optional[dict]:
     return usuario
 
 
+def cadastrar_usuario(
+    nome: str, email: str, senha: str, perfil: str = GRUPO_CLIENTE
+) -> dict:
+    perfil_normalizado = perfil.lower().strip()
+    if perfil_normalizado not in GRUPOS_COM_ACESSO_TOTAL:
+        raise ValueError("Perfil inválido. Use 'cliente' ou 'tatuador'.")
+
+    usuario = repositorio_usuario.criar_usuario(
+        nome, email, senha, perfil_normalizado
+    )
+    if usuario is None:
+        raise ValueError("Não foi possível criar o usuário.")
+    return usuario
+
+
 # Gera o token JWT que acompanhará as requisições autenticadas no backend.
 def gerar_token(usuario: dict) -> str:
     payload = {

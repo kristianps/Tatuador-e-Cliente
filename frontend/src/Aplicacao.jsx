@@ -21,11 +21,16 @@ const figurasIniciais = [
 ];
 
 function Aplicacao() {
+  const [nome, definirNome] = useState("");
   const [email, definirEmail] = useState("bruna@pereiratatto.com");
   const [senha, definirSenha] = useState("bruna123");
+  const [perfil, definirPerfil] = useState("cliente");
   const [usuario, definirUsuario] = useState(null);
   const [estadoLogin, definirEstadoLogin] = useState("pronto");
+  const [estadoCadastro, definirEstadoCadastro] = useState("pronto");
   const [erroLogin, definirErroLogin] = useState("");
+  const [erroCadastro, definirErroCadastro] = useState("");
+  const [mensagemCadastro, definirMensagemCadastro] = useState("");
   const [telaAtual, definirTelaAtual] = useState("pedir");
   const [tatuagemId, definirTatuagemId] = useState(null);
 
@@ -44,14 +49,14 @@ function Aplicacao() {
   }, []);
 
   function trocarPerfil(novoPerfilId) {
-    const perfil = novoPerfilId === "cliente" ? "cliente" : "tatuador";
-    const dados = perfil === "cliente"
+    const perfilEscolhido = novoPerfilId === "cliente" ? "cliente" : "tatuador";
+    const dados = perfilEscolhido === "cliente"
       ? { id: 1, nome: "Bruna", perfil: "cliente" }
       : { id: 2, nome: "Vitor", perfil: "tatuador" };
 
     definirUsuario(dados);
     definirTatuagemId(null);
-    definirTelaAtual(perfil === "cliente" ? "pedir" : "agenda");
+    definirTelaAtual(perfilEscolhido === "cliente" ? "pedir" : "agenda");
     localStorage.setItem("pereiratatto-usuario", JSON.stringify(dados));
   }
 
@@ -86,6 +91,39 @@ function Aplicacao() {
       });
   }
 
+  function fazerCadastro(evento) {
+    evento.preventDefault();
+    definirEstadoCadastro("carregando");
+    definirErroCadastro("");
+    definirMensagemCadastro("");
+
+    fetch(`${enderecoApi}/cadastro`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome, email, senha, perfil }),
+    })
+      .then((resposta) => {
+        if (!resposta.ok) {
+          return resposta.json().then((detalhe) => {
+            throw new Error(detalhe.detail || "Não foi possível criar a conta.");
+          });
+        }
+        return resposta.json();
+      })
+      .then(() => {
+        definirMensagemCadastro("Conta criada com sucesso! Faça login para continuar.");
+        definirNome("");
+        definirEmail("bruna@pereiratatto.com");
+        definirSenha("bruna123");
+        definirPerfil("cliente");
+        definirEstadoCadastro("pronto");
+      })
+      .catch((erro) => {
+        definirErroCadastro(erro.message);
+        definirEstadoCadastro("erro");
+      });
+  }
+
   function realizarLogout() {
     localStorage.removeItem("pereiratatto-token");
     localStorage.removeItem("pereiratatto-usuario");
@@ -109,6 +147,7 @@ function Aplicacao() {
         <section className="painel">
           <p className="sobretitulo">ACESSO AO SISTEMA</p>
           <h1>Entrar no PereiraTatto</h1>
+
           <form className="formulario" onSubmit={fazerLogin}>
             <label className="campo-local-corpo">
               E-mail
@@ -122,7 +161,36 @@ function Aplicacao() {
               {estadoLogin === "carregando" ? "Entrando…" : "Entrar"}
             </button>
           </form>
+
+          <form className="formulario" onSubmit={fazerCadastro} style={{ marginTop: "1.5rem" }}>
+            <h2 style={{ marginBottom: "1rem" }}>Criar conta</h2>
+            <label className="campo-local-corpo">
+              Nome
+              <input type="text" value={nome} onChange={(evento) => definirNome(evento.target.value)} required minLength={2} />
+            </label>
+            <label className="campo-local-corpo">
+              E-mail
+              <input type="email" value={email} onChange={(evento) => definirEmail(evento.target.value)} required />
+            </label>
+            <label className="campo-local-corpo">
+              Senha
+              <input type="password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required minLength={6} />
+            </label>
+            <label className="campo-local-corpo">
+              Perfil
+              <select value={perfil} onChange={(evento) => definirPerfil(evento.target.value)}>
+                <option value="cliente">Cliente</option>
+                <option value="tatuador">Tatuador</option>
+              </select>
+            </label>
+            <button className="botao-secundario" type="submit" disabled={estadoCadastro === "carregando"}>
+              {estadoCadastro === "carregando" ? "Cadastrando…" : "Cadastrar conta"}
+            </button>
+          </form>
+
           {erroLogin && <p className="aviso erro" role="alert">{erroLogin}</p>}
+          {erroCadastro && <p className="aviso erro" role="alert">{erroCadastro}</p>}
+          {mensagemCadastro && <p className="aviso sucesso" role="status">{mensagemCadastro}</p>}
           <p className="introducao">Demo: Bruna — bruna@pereiratatto.com / bruna123 ou Vitor — vitor@pereiratatto.com / vitor123</p>
         </section>
       );
