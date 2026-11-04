@@ -21,38 +21,30 @@ const locaisDisponiveis = [
 
 // Permite que a cliente escolha decalques ou envie uma ideia própria ao estúdio.
 function PedirTatuagem({ perfil, figuras }) {
-  // useState guarda as referências escolhidas, a ideia livre e os estados do envio.
-  const [figurasSelecionadas, definirFigurasSelecionadas] = useState([]);
+  // useState guarda a referência escolhida, a ideia livre e os estados do envio.
+  const [figuraSelecionada, definirFiguraSelecionada] = useState("");
   const [ideiaLivre, definirIdeiaLivre] = useState("");
   const [localCorpo, definirLocalCorpo] = useState("");
   const [estado, definirEstado] = useState("pronto");
   const [mensagem, definirMensagem] = useState("");
   const [mostrarIdeiaLivre, definirMostrarIdeiaLivre] = useState(false);
-  // Atualiza o passo em destaque conforme a cliente escolhe referências e região do corpo.
+  // Atualiza o passo em destaque conforme a cliente escolhe uma referência e região do corpo.
   const passoAtual = localCorpo
     ? 3
-    : figurasSelecionadas.length > 0 || ideiaLivre.trim()
+    : figuraSelecionada || ideiaLivre.trim()
       ? 2
       : 1;
 
-  // Alterna a escolha de um decalque sem impedir que a cliente selecione outros.
+  // Alterna a escolha de uma única referência do catálogo.
   function alternarFigura(figuraId) {
-    if (figurasSelecionadas.includes(figuraId)) {
-      definirFigurasSelecionadas(
-        figurasSelecionadas.filter((id) => id !== figuraId),
-      );
-      return;
-    }
-
-    definirFigurasSelecionadas([...figurasSelecionadas, figuraId]);
+    definirFiguraSelecionada((atual) => (atual === figuraId ? "" : figuraId));
   }
 
   // Envia as referências e a ideia própria no campo de ideia previsto na API.
   function enviarPedido(evento) {
     evento.preventDefault();
-    const nomesFiguras = figuras
-      .filter((figura) => figurasSelecionadas.includes(figura.id))
-      .map((figura) => figura.nome);
+    const figuraEscolhida = figuras.find((figura) => figura.id === figuraSelecionada);
+    const nomesFiguras = figuraEscolhida ? [figuraEscolhida.nome] : [];
     const partesDaIdeia = [];
 
     if (nomesFiguras.length > 0) {
@@ -95,7 +87,7 @@ function PedirTatuagem({ perfil, figuras }) {
       .then((tatuagem) => {
         definirEstado("pronto");
         definirMensagem(`Pedido ${tatuagem.id} enviado. Etapa atual: ${tatuagem.etapa}.`);
-        definirFigurasSelecionadas([]);
+        definirFiguraSelecionada("");
         definirIdeiaLivre("");
         definirLocalCorpo("");
       })
@@ -112,7 +104,7 @@ function PedirTatuagem({ perfil, figuras }) {
           <p className="sobretitulo">SUA IDEIA GANHA FORMA AQUI</p>
           <h1 id="titulo-pedido">Uma tatuagem com a sua história.</h1>
           <p className="introducao">
-            Escolha referências visuais ou conte ao estúdio o que você imagina.
+            Escolha uma referência visual ou conte ao estúdio o que você imagina.
           </p>
           <ol className="passos-pedido" aria-label="Etapas para pedir uma tatuagem">
             {["Inspire-se", "Escolha o local", "Envie seu pedido"].map((passo, indice) => (
@@ -132,14 +124,14 @@ function PedirTatuagem({ perfil, figuras }) {
       <form className="formulario" onSubmit={enviarPedido}>
         <fieldset className="campo-figuras">
           <legend>Referências de tatuagens</legend>
-          <p className="ajuda-campo">Selecione ou desmarque as imagens que combinam com sua ideia.</p>
+          <p className="ajuda-campo">Selecione apenas uma imagem que combinem com sua ideia.</p>
           <div className="grade-figuras">
             {figuras.map((figura) => (
               <button
-                className={figurasSelecionadas.includes(figura.id) ? "figura selecionada" : "figura"}
+                className={figuraSelecionada === figura.id ? "figura selecionada" : "figura"}
                 type="button"
                 key={figura.id}
-                aria-pressed={figurasSelecionadas.includes(figura.id)}
+                aria-pressed={figuraSelecionada === figura.id}
                 onClick={() => alternarFigura(figura.id)}
               >
                 <img className="imagem-decalque" src={figura.imagem} alt={`Imagem de referência: ${figura.nome}`} loading="lazy" />
@@ -148,12 +140,9 @@ function PedirTatuagem({ perfil, figuras }) {
             ))}
           </div>
           <p className="resumo-selecao">
-            {figurasSelecionadas.length === 0
+            {!figuraSelecionada
               ? "Nenhum decalque selecionado"
-              : `Selecionados: ${figuras
-                  .filter((figura) => figurasSelecionadas.includes(figura.id))
-                  .map((figura) => figura.nome)
-                  .join(", ")}`}
+              : `Selecionado: ${figuras.find((figura) => figura.id === figuraSelecionada)?.nome ?? ""}`}
           </p>
         </fieldset>
 
@@ -183,17 +172,17 @@ function PedirTatuagem({ perfil, figuras }) {
         </section>
 
         <label className="campo-local-corpo">
-            Onde deseja tatuar?
-            <select
-              value={localCorpo}
-              onChange={(evento) => definirLocalCorpo(evento.target.value)}
-              required
-            >
-              <option value="" disabled>Selecione uma região do corpo</option>
-              {locaisDisponiveis.map((local) => (
-                <option key={local} value={local}>{local}</option>
-              ))}
-            </select>
+          Onde deseja tatuar?
+          <select
+            value={localCorpo}
+            onChange={(evento) => definirLocalCorpo(evento.target.value)}
+            required
+          >
+            <option value="" disabled>Selecione uma região do corpo</option>
+            {locaisDisponiveis.map((local) => (
+              <option key={local} value={local}>{local}</option>
+            ))}
+          </select>
         </label>
 
         <button className="botao-principal" type="submit" disabled={estado === "carregando"}>

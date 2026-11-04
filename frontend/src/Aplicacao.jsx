@@ -161,52 +161,63 @@ function Aplicacao() {
     if (!usuario) {
       return (
         <section className="painel">
-          <p className="sobretitulo">ACESSO AO SISTEMA</p>
-          <h1>Entrar no PereiraTatto</h1>
+          <div className="auth-grid">
+            <div className="auth-card">
+              <p className="sobretitulo">ACESSO AO SISTEMA</p>
+              <h1>Entrar no PereiraTatto</h1>
 
-          <form className="formulario" onSubmit={fazerLogin}>
-            <label className="campo-local-corpo">
-              E-mail
-              <input type="email" value={email} onChange={(evento) => definirEmail(evento.target.value)} required />
-            </label>
-            <label className="campo-local-corpo">
-              Senha
-              <input type="password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required />
-            </label>
-            <button className="botao-principal" type="submit" disabled={estadoLogin === "carregando"}>
-              {estadoLogin === "carregando" ? "Entrando…" : "Entrar"}
-            </button>
-          </form>
+              <form className="formulario" onSubmit={fazerLogin}>
+                <label className="campo-local-corpo">
+                  E-mail
+                  <input type="email" value={email} onChange={(evento) => definirEmail(evento.target.value)} required />
+                </label>
+                <label className="campo-local-corpo">
+                  Senha
+                  <input type="password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required />
+                </label>
+                <button className="botao-principal" type="submit" disabled={estadoLogin === "carregando"}>
+                  {estadoLogin === "carregando" ? "Entrando…" : "Entrar"}
+                </button>
+              </form>
+            </div>
 
-          <form className="formulario" onSubmit={fazerCadastro} style={{ marginTop: "1.5rem" }}>
-            <h2 style={{ marginBottom: "1rem" }}>Criar conta</h2>
-            <label className="campo-local-corpo">
-              Nome
-              <input type="text" value={nome} onChange={(evento) => definirNome(evento.target.value)} required minLength={2} />
-            </label>
-            <label className="campo-local-corpo">
-              E-mail
-              <input type="email" value={email} onChange={(evento) => definirEmail(evento.target.value)} required />
-            </label>
-            <label className="campo-local-corpo">
-              Senha
-              <input type="password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required minLength={6} />
-            </label>
-            <label className="campo-local-corpo">
-              Perfil
-              <select value={perfil} onChange={(evento) => definirPerfil(evento.target.value)}>
-                <option value="cliente">Cliente</option>
-                <option value="tatuador">Tatuador</option>
-              </select>
-            </label>
-            <button className="botao-secundario" type="submit" disabled={estadoCadastro === "carregando"}>
-              {estadoCadastro === "carregando" ? "Cadastrando…" : "Cadastrar conta"}
-            </button>
-          </form>
+            <div className="auth-card">
+              <p className="sobretitulo">NOVA CONTA</p>
+              <h2>Criar conta</h2>
 
-          {erroLogin && <p className="aviso erro" role="alert">{erroLogin}</p>}
-          {erroCadastro && <p className="aviso erro" role="alert">{erroCadastro}</p>}
-          {mensagemCadastro && <p className="aviso sucesso" role="status">{mensagemCadastro}</p>}
+              <form className="formulario" onSubmit={fazerCadastro}>
+                <label className="campo-local-corpo">
+                  Nome
+                  <input type="text" value={nome} onChange={(evento) => definirNome(evento.target.value)} required minLength={2} />
+                </label>
+                <label className="campo-local-corpo">
+                  E-mail
+                  <input type="email" value={email} onChange={(evento) => definirEmail(evento.target.value)} required />
+                </label>
+                <label className="campo-local-corpo">
+                  Senha
+                  <input type="password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required minLength={6} />
+                </label>
+                <label className="campo-local-corpo">
+                  Perfil
+                  <select value={perfil} onChange={(evento) => definirPerfil(evento.target.value)}>
+                    <option value="cliente">Cliente</option>
+                    <option value="tatuador">Tatuador</option>
+                  </select>
+                </label>
+                <button className="botao-secundario" type="submit" disabled={estadoCadastro === "carregando"}>
+                  {estadoCadastro === "carregando" ? "Cadastrando…" : "Cadastrar conta"}
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <div className="auth-mensagens">
+            {erroLogin && <p className="aviso erro" role="alert">{erroLogin}</p>}
+            {erroCadastro && <p className="aviso erro" role="alert">{erroCadastro}</p>}
+            {mensagemCadastro && <p className="aviso sucesso" role="status">{mensagemCadastro}</p>}
+          </div>
+
           <p className="introducao">Demo: Bruna — bruna@pereiratatto.com / bruna123 ou Vitor — vitor@pereiratatto.com / vitor123</p>
         </section>
       );
