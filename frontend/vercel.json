@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:caminho*",
-      "destination": "https://SEU-DOMINIO-DO-BACKEND.vercel.app/:caminho*"
+      "destination": "https://backend-two-gray-28.vercel.app/:caminho*"
     },
     {
       "source": "/(.*)",
