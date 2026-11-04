@@ -70,13 +70,29 @@ function Aplicacao() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, senha }),
     })
-      .then((resposta) => {
+      .then(async (resposta) => {
+        const texto = await resposta.text();
+
         if (!resposta.ok) {
-          return resposta.json().then((detalhe) => {
-            throw new Error(detalhe.detail || "Credenciais inválidas.");
-          });
+          let detalhe = "Credenciais inválidas.";
+          try {
+            const json = JSON.parse(texto);
+            detalhe = json.detail || detalhe;
+          } catch {
+            detalhe = texto || detalhe;
+          }
+          throw new Error(detalhe);
         }
-        return resposta.json();
+
+        if (!texto) {
+          throw new Error("Resposta vazia da API.");
+        }
+
+        try {
+          return JSON.parse(texto);
+        } catch {
+          throw new Error("A API respondeu em um formato inválido.");
+        }
       })
       .then((resultado) => {
         localStorage.setItem("pereiratatto-token", resultado.access_token);
