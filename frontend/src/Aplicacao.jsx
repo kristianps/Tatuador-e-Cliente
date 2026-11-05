@@ -31,6 +31,7 @@ function Aplicacao() {
   const [erroLogin, definirErroLogin] = useState("");
   const [erroCadastro, definirErroCadastro] = useState("");
   const [mensagemCadastro, definirMensagemCadastro] = useState("");
+  const [abaAtiva, definirAbaAtiva] = useState("login");
   const [telaAtual, definirTelaAtual] = useState("pedir");
   const [tatuagemId, definirTatuagemId] = useState(null);
 
@@ -133,6 +134,7 @@ function Aplicacao() {
         definirSenha("vitor123");
         definirPerfil("tatuador");
         definirEstadoCadastro("pronto");
+        definirAbaAtiva("login");
       })
       .catch((erro) => {
         definirErroCadastro(erro.message);
@@ -161,48 +163,71 @@ function Aplicacao() {
     if (!usuario) {
       return (
         <section className="painel">
-          <div className="auth-grid">
-            <div className="auth-card">
-              <p className="sobretitulo">ACESSO AO SISTEMA</p>
-              <h1>Entrar no PereiraTatto</h1>
-
-              <form className="formulario" onSubmit={fazerLogin}>
-                <label className="campo-local-corpo">
-                  E-mail
-                  <input type="email" value={email} onChange={(evento) => definirEmail(evento.target.value)} required />
-                </label>
-                <label className="campo-local-corpo">
-                  Senha
-                  <input type="password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required />
-                </label>
-                <button className="botao-principal" type="submit" disabled={estadoLogin === "carregando"}>
-                  {estadoLogin === "carregando" ? "Entrando…" : "Entrar"}
-                </button>
-              </form>
+          <div className="auth-card">
+            <div className="abas-login" role="tablist" aria-label="Acesso ao sistema">
+              <button
+                type="button"
+                className={abaAtiva === "login" ? "aba-login ativa" : "aba-login"}
+                role="tab"
+                aria-selected={abaAtiva === "login"}
+                onClick={() => definirAbaAtiva("login")}
+              >
+                Entrar
+              </button>
+              <button
+                type="button"
+                className={abaAtiva === "cadastro" ? "aba-login ativa" : "aba-login"}
+                role="tab"
+                aria-selected={abaAtiva === "cadastro"}
+                onClick={() => definirAbaAtiva("cadastro")}
+              >
+                Criar conta
+              </button>
             </div>
 
-            <div className="auth-card">
-              <p className="sobretitulo">NOVA CONTA</p>
-              <h2>Criar conta</h2>
+            {abaAtiva === "login" ? (
+              <>
+                <p className="sobretitulo">ACESSO AO SISTEMA</p>
+                <h1>Entrar no PereiraTatto</h1>
 
-              <form className="formulario" onSubmit={fazerCadastro}>
-                <label className="campo-local-corpo">
-                  Nome
-                  <input type="text" value={nome} onChange={(evento) => definirNome(evento.target.value)} required minLength={2} />
-                </label>
-                <label className="campo-local-corpo">
-                  E-mail
-                  <input type="email" value={email} onChange={(evento) => definirEmail(evento.target.value)} required />
-                </label>
-                <label className="campo-local-corpo">
-                  Senha
-                  <input type="password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required minLength={6} />
-                </label>
-                <button className="botao-secundario" type="submit" disabled={estadoCadastro === "carregando"}>
-                  {estadoCadastro === "carregando" ? "Cadastrando…" : "Cadastrar conta"}
-                </button>
-              </form>
-            </div>
+                <form className="formulario" onSubmit={fazerLogin}>
+                  <label className="campo-local-corpo">
+                    E-mail
+                    <input type="email" value={email} onChange={(evento) => definirEmail(evento.target.value)} required />
+                  </label>
+                  <label className="campo-local-corpo">
+                    Senha
+                    <input type="password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required />
+                  </label>
+                  <button className="botao-principal" type="submit" disabled={estadoLogin === "carregando"}>
+                    {estadoLogin === "carregando" ? "Entrando…" : "Entrar"}
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <p className="sobretitulo">NOVA CONTA</p>
+                <h2>Criar conta</h2>
+
+                <form className="formulario" onSubmit={fazerCadastro}>
+                  <label className="campo-local-corpo">
+                    Nome
+                    <input type="text" value={nome} onChange={(evento) => definirNome(evento.target.value)} required minLength={2} />
+                  </label>
+                  <label className="campo-local-corpo">
+                    E-mail
+                    <input type="email" value={email} onChange={(evento) => definirEmail(evento.target.value)} required />
+                  </label>
+                  <label className="campo-local-corpo">
+                    Senha
+                    <input type="password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required minLength={6} />
+                  </label>
+                  <button className="botao-secundario" type="submit" disabled={estadoCadastro === "carregando"}>
+                    {estadoCadastro === "carregando" ? "Cadastrando…" : "Cadastrar conta"}
+                  </button>
+                </form>
+              </>
+            )}
           </div>
 
           <div className="auth-mensagens">
@@ -211,7 +236,7 @@ function Aplicacao() {
             {mensagemCadastro && <p className="aviso sucesso" role="status">{mensagemCadastro}</p>}
           </div>
 
-          <p className="introducao">Demo: Bruna — bruna@pereiratatto.com / bruna123 ou Vitor — vitor@pereiratatto.com / vitor123</p>
+          <p className="introducao">Demo: Vitor — vitor@pereiratatto.com / vitor123</p>
         </section>
       );
     }
