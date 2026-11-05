@@ -80,7 +80,7 @@ function Agenda({ aoAbrirFicha }) {
   }
 
   return (
-    <section className="painel painel-gestao">
+    <section className="painel painel-gestao painel-agenda">
       <header className="cabecalho-agenda-simples">
         <div>
           <p className="sobretitulo">ESTÚDIO PEREIRATATTO</p>
@@ -117,7 +117,7 @@ function Agenda({ aoAbrirFicha }) {
               <div className="numero-agenda" aria-hidden="true">{String(tatuagem.id).padStart(2, "0")}</div>
               <div className="dados-agenda">
                 <p className="identificador">PEDIDO Nº {tatuagem.id}</p>
-                <h3>{tatuagem.ideia}</h3>
+                <h3 title={tatuagem.ideia}>{tatuagem.ideia}</h3>
                 <p className="local-agenda">Local: <strong>{tatuagem.local_corpo}</strong></p>
                 <span className="etapa">{nomeEtapa(tatuagem.etapa)}</span>
               </div>

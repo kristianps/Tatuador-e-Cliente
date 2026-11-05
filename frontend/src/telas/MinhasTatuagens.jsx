@@ -132,7 +132,7 @@ function MinhasTatuagens({ perfil }) {
   }
 
   return (
-    <section className="painel">
+    <section className="painel painel-minhas">
       {celebracao && (
         <section
           key={celebracao.chave}
@@ -162,54 +162,56 @@ function MinhasTatuagens({ perfil }) {
       <h1>Minhas tatuagens</h1>
       <p className="introducao">Veja a etapa atual e abra uma tatuagem para consultar o histórico.</p>
 
-      {tatuagens.length === 0 ? (
-        <div className="estado-vazio">Você ainda não tem tatuagens cadastradas.</div>
-      ) : (
-        <ul className="lista-tatuagens">
-          {/* map transforma cada item da lista em um cartão da tela. */}
-          {tatuagens.map((tatuagem) => (
-            <li className="cartao-tatuagem" key={tatuagem.id}>
+      <div className={tatuagemAberta ? "area-minhas com-historico" : "area-minhas"}>
+        {tatuagens.length === 0 ? (
+          <div className="estado-vazio">Você ainda não tem tatuagens cadastradas.</div>
+        ) : (
+          <ul className="lista-tatuagens">
+            {/* map transforma cada item da lista em um cartão da tela. */}
+            {tatuagens.map((tatuagem) => (
+              <li className="cartao-tatuagem" key={tatuagem.id}>
+                <div>
+                  <h2 title={tatuagem.ideia}>{tatuagem.ideia}</h2>
+                  <p>{tatuagem.local_corpo}</p>
+                  <span className="etapa">{tatuagem.etapa}</span>
+                </div>
+                <button className="botao-secundario" onClick={() => abrirHistorico(tatuagem)}>
+                  Ver histórico
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {tatuagemAberta && (
+          <section className="historico">
+            <div className="titulo-historico">
               <div>
-                <h2>{tatuagem.ideia}</h2>
-                <p>{tatuagem.local_corpo}</p>
-                <span className="etapa">{tatuagem.etapa}</span>
+                <p className="sobretitulo">HISTÓRICO</p>
+                <h2>{tatuagemAberta.ideia}</h2>
               </div>
-              <button className="botao-secundario" onClick={() => abrirHistorico(tatuagem)}>
-                Ver histórico
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {tatuagemAberta && (
-        <section className="historico">
-          <div className="titulo-historico">
-            <div>
-              <p className="sobretitulo">HISTÓRICO</p>
-              <h2>{tatuagemAberta.ideia}</h2>
+              <button className="botao-secundario" onClick={fecharHistorico}>Fechar</button>
             </div>
-            <button className="botao-secundario" onClick={fecharHistorico}>Fechar</button>
-          </div>
 
-          {estadoHistorico === "carregando" && <p>Carregando histórico…</p>}
-          {estadoHistorico === "erro" && <p className="aviso erro">{erroHistorico}</p>}
-          {estadoHistorico === "pronto" && passos.length === 0 && (
-            <p className="estado-vazio">Ainda não há passos registrados.</p>
-          )}
-          {estadoHistorico === "pronto" && passos.length > 0 && (
-            <ol className="lista-passos">
-              {passos.map((passo) => (
-                <li key={passo.id}>
-                  <strong>{passo.tipo}</strong>
-                  <time dateTime={passo.data}>{passo.data}</time>
-                  {passo.observacao && <p>{passo.observacao}</p>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      )}
+            {estadoHistorico === "carregando" && <p>Carregando histórico…</p>}
+            {estadoHistorico === "erro" && <p className="aviso erro">{erroHistorico}</p>}
+            {estadoHistorico === "pronto" && passos.length === 0 && (
+              <p className="estado-vazio">Ainda não há passos registrados.</p>
+            )}
+            {estadoHistorico === "pronto" && passos.length > 0 && (
+              <ol className="lista-passos">
+                {passos.map((passo) => (
+                  <li key={passo.id}>
+                    <strong>{passo.tipo}</strong>
+                    <time dateTime={passo.data}>{passo.data}</time>
+                    {passo.observacao && <p>{passo.observacao}</p>}
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+        )}
+      </div>
     </section>
   );
 }

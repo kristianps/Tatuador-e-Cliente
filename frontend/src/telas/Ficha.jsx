@@ -165,58 +165,62 @@ function Ficha({ tatuagemId, aoVoltar }) {
         <span className="etapa etapa-destaque">{nomeEtapa(tatuagem.etapa)}</span>
       </header>
 
-      <div className="resumo-ficha resumo-ficha-detalhado">
-        <div><span>IDEIA</span><h2>{tatuagem.ideia}</h2></div>
-        <div><span>LOCAL</span><strong>{tatuagem.local_corpo}</strong></div>
-      </div>
-
-      <form className="formulario formulario-andamento" onSubmit={atualizarAndamento}>
-        <fieldset className="seletor-etapa">
-          <legend>Etapa atual</legend>
-          <p>Escolha em qual etapa este pedido está.</p>
-          <div className="opcoes-etapa">
-            {opcoesEtapa.map((opcao, indice) => (
-              <button
-                className={etapaSelecionada === opcao.etapa ? "opcao-etapa selecionada" : "opcao-etapa"}
-                type="button"
-                key={opcao.etapa}
-                aria-pressed={etapaSelecionada === opcao.etapa}
-                onClick={() => definirEtapaSelecionada(opcao.etapa)}
-              >
-                <span className="numero-etapa">0{indice + 1}</span>
-                <strong>{opcao.nome}</strong>
-                <small>{opcao.detalhe}</small>
-              </button>
-            ))}
+      <div className="corpo-ficha">
+        <div className="coluna-ficha">
+          <div className="resumo-ficha resumo-ficha-detalhado">
+            <div><span>IDEIA</span><h2>{tatuagem.ideia}</h2></div>
+            <div><span>LOCAL</span><strong>{tatuagem.local_corpo}</strong></div>
           </div>
-        </fieldset>
-        <button
-          className="botao-principal"
-          type="submit"
-          disabled={estado === "carregando" || !opcaoSelecionada || etapaSelecionada === tatuagem.etapa}
-        >
-          {estado === "carregando" ? "Salvando…" : etapaSelecionada === tatuagem.etapa ? "Etapa atual selecionada" : "Salvar etapa"}
-        </button>
-      </form>
 
-      {estado === "erro" && <p className="aviso erro" role="alert">{erro}</p>}
-      {mensagem && <p className="aviso sucesso" role="status">{mensagem}</p>}
-
-      {passos.length > 0 && (
-        <section className="historico historico-ficha">
-          <div className="cabecalho-historico-simples">
-            <h2>Atualizações</h2>
-            <button className="botao-perigo" type="button" disabled={limpandoHistorico} onClick={limparHistorico}>
-              {limpandoHistorico ? "Limpando…" : "Limpar histórico"}
+          <form className="formulario formulario-andamento" onSubmit={atualizarAndamento}>
+            <fieldset className="seletor-etapa">
+              <legend>Etapa atual</legend>
+              <p>Escolha em qual etapa este pedido está.</p>
+              <div className="opcoes-etapa">
+                {opcoesEtapa.map((opcao, indice) => (
+                  <button
+                    className={etapaSelecionada === opcao.etapa ? "opcao-etapa selecionada" : "opcao-etapa"}
+                    type="button"
+                    key={opcao.etapa}
+                    aria-pressed={etapaSelecionada === opcao.etapa}
+                    onClick={() => definirEtapaSelecionada(opcao.etapa)}
+                  >
+                    <span className="numero-etapa">0{indice + 1}</span>
+                    <strong>{opcao.nome}</strong>
+                    <small>{opcao.detalhe}</small>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <button
+              className="botao-principal"
+              type="submit"
+              disabled={estado === "carregando" || !opcaoSelecionada || etapaSelecionada === tatuagem.etapa}
+            >
+              {estado === "carregando" ? "Salvando…" : etapaSelecionada === tatuagem.etapa ? "Etapa atual selecionada" : "Salvar etapa"}
             </button>
-          </div>
-          <ul className="atualizacoes-simples">
-            {passos.map((passo) => (
-              <li key={passo.id}>{nomeEtapa(passo.etapa_atualizada || passo.tipo)} · {new Date(`${passo.data}T12:00:00`).toLocaleDateString("pt-BR")}</li>
-            ))}
-          </ul>
-        </section>
-      )}
+          </form>
+
+          {estado === "erro" && <p className="aviso erro" role="alert">{erro}</p>}
+          {mensagem && <p className="aviso sucesso" role="status">{mensagem}</p>}
+        </div>
+
+        {passos.length > 0 && (
+          <section className="historico historico-ficha">
+            <div className="cabecalho-historico-simples">
+              <h2>Atualizações</h2>
+              <button className="botao-perigo" type="button" disabled={limpandoHistorico} onClick={limparHistorico}>
+                {limpandoHistorico ? "Limpando…" : "Limpar histórico"}
+              </button>
+            </div>
+            <ul className="atualizacoes-simples">
+              {passos.map((passo) => (
+                <li key={passo.id}>{nomeEtapa(passo.etapa_atualizada || passo.tipo)} · {new Date(`${passo.data}T12:00:00`).toLocaleDateString("pt-BR")}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
     </section>
   );
 }

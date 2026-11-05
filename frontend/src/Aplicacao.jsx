@@ -234,7 +234,7 @@ function Aplicacao() {
   function mostrarTela() {
     if (!usuario) {
       return (
-        <section className="painel">
+        <section className="painel painel-auth">
           <div className="auth-card">
             <div className="abas-login" role="tablist" aria-label="Acesso ao sistema">
               <button
@@ -290,15 +290,17 @@ function Aplicacao() {
                     E-mail
                     <input type="email" name="email" autoComplete="email" placeholder="seu@email.com" value={emailCadastro} onChange={(evento) => definirEmailCadastro(evento.target.value)} required />
                   </label>
-                  <label className="campo-local-corpo">
-                    Senha
-                    <input type="password" name="nova-senha" autoComplete="new-password" value={senhaCadastro} onChange={(evento) => definirSenhaCadastro(evento.target.value)} required minLength={8} maxLength={100} />
-                    <small className="dica-campo">Use pelo menos 8 caracteres.</small>
-                  </label>
-                  <label className="campo-local-corpo">
-                    Confirmar senha
-                    <input type="password" name="confirmar-senha" autoComplete="new-password" value={confirmacaoSenha} onChange={(evento) => definirConfirmacaoSenha(evento.target.value)} required minLength={8} maxLength={100} />
-                  </label>
+                  <div className="linha-campos">
+                    <label className="campo-local-corpo">
+                      Senha
+                      <input type="password" name="nova-senha" autoComplete="new-password" value={senhaCadastro} onChange={(evento) => definirSenhaCadastro(evento.target.value)} required minLength={8} maxLength={100} />
+                      <small className="dica-campo">Use pelo menos 8 caracteres.</small>
+                    </label>
+                    <label className="campo-local-corpo">
+                      Confirmar senha
+                      <input type="password" name="confirmar-senha" autoComplete="new-password" value={confirmacaoSenha} onChange={(evento) => definirConfirmacaoSenha(evento.target.value)} required minLength={8} maxLength={100} />
+                    </label>
+                  </div>
                   <button className="botao-principal" type="submit" disabled={estadoCadastro === "carregando"}>
                     {estadoCadastro === "carregando" ? "Cadastrando…" : "Cadastrar conta"}
                   </button>

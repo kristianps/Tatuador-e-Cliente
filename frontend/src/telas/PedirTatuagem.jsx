@@ -98,7 +98,7 @@ function PedirTatuagem({ perfil, figuras }) {
   }
 
   return (
-    <section className="painel">
+    <section className="painel painel-pedido">
       <section className="hero-pedido" aria-labelledby="titulo-pedido">
         <div className="hero-pedido-texto">
           <p className="sobretitulo">SUA IDEIA GANHA FORMA AQUI</p>
