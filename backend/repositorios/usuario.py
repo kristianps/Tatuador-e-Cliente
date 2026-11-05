@@ -45,7 +45,6 @@ def inicializar() -> None:
 # Cria os perfis padrão do sistema, com cliente e tatuador, para a aula de login funcionar no demo.
 def criar_usuarios_iniciais() -> None:
     usuarios = [
-        ("Bruna", "bruna@pereiratatto.com", "bruna123", "cliente"),
         ("Vitor", "vitor@pereiratatto.com", "vitor123", "tatuador"),
     ]
 

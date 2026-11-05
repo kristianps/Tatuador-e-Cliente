@@ -22,9 +22,9 @@ const figurasIniciais = [
 
 function Aplicacao() {
   const [nome, definirNome] = useState("");
-  const [email, definirEmail] = useState("bruna@pereiratatto.com");
-  const [senha, definirSenha] = useState("bruna123");
-  const [perfil, definirPerfil] = useState("cliente");
+  const [email, definirEmail] = useState("vitor@pereiratatto.com");
+  const [senha, definirSenha] = useState("vitor123");
+  const [perfil, definirPerfil] = useState("tatuador");
   const [usuario, definirUsuario] = useState(null);
   const [estadoLogin, definirEstadoLogin] = useState("pronto");
   const [estadoCadastro, definirEstadoCadastro] = useState("pronto");
@@ -116,7 +116,7 @@ function Aplicacao() {
     fetch(`${enderecoApi}/cadastro`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome, email, senha, perfil }),
+      body: JSON.stringify({ nome, email, senha, perfil: "tatuador" }),
     })
       .then((resposta) => {
         if (!resposta.ok) {
@@ -129,9 +129,9 @@ function Aplicacao() {
       .then(() => {
         definirMensagemCadastro("Conta criada com sucesso! Faça login para continuar.");
         definirNome("");
-        definirEmail("bruna@pereiratatto.com");
-        definirSenha("bruna123");
-        definirPerfil("cliente");
+        definirEmail("vitor@pereiratatto.com");
+        definirSenha("vitor123");
+        definirPerfil("tatuador");
         definirEstadoCadastro("pronto");
       })
       .catch((erro) => {
@@ -197,13 +197,6 @@ function Aplicacao() {
                 <label className="campo-local-corpo">
                   Senha
                   <input type="password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required minLength={6} />
-                </label>
-                <label className="campo-local-corpo">
-                  Perfil
-                  <select value={perfil} onChange={(evento) => definirPerfil(evento.target.value)}>
-                    <option value="cliente">Cliente</option>
-                    <option value="tatuador">Tatuador</option>
-                  </select>
                 </label>
                 <button className="botao-secundario" type="submit" disabled={estadoCadastro === "carregando"}>
                   {estadoCadastro === "carregando" ? "Cadastrando…" : "Cadastrar conta"}
