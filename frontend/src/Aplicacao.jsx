@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { enderecoApi } from "./api.js";
 import Agenda from "./telas/Agenda.jsx";
@@ -36,6 +36,40 @@ function Aplicacao() {
   const [abaAtiva, definirAbaAtiva] = useState("login");
   const [telaAtual, definirTelaAtual] = useState("pedir");
   const [tatuagemId, definirTatuagemId] = useState(null);
+  const cabecalhoRef = useRef(null);
+
+  // A barra acompanha a rolagem: some aos poucos ao descer e volta na mesma medida ao subir.
+  useEffect(() => {
+    const cabecalho = cabecalhoRef.current;
+    let ultimaPosicao = Math.max(window.scrollY, 0);
+    let deslocamento = 0;
+
+    function posicionar(novoDeslocamento) {
+      deslocamento = novoDeslocamento;
+      cabecalho.style.transform = `translateY(${-deslocamento}px)`;
+      cabecalho.classList.toggle("recolhido", deslocamento > 0 && deslocamento >= cabecalho.offsetHeight);
+    }
+
+    function aoRolar() {
+      const posicao = Math.max(window.scrollY, 0);
+      const novoDeslocamento = deslocamento + posicao - ultimaPosicao;
+      ultimaPosicao = posicao;
+      posicionar(Math.min(Math.max(novoDeslocamento, 0), cabecalho.offsetHeight));
+    }
+
+    // Quem navega pelo teclado precisa enxergar o item da barra que recebeu o foco.
+    function aoFocar() {
+      posicionar(0);
+    }
+
+    window.addEventListener("scroll", aoRolar, { passive: true });
+    cabecalho.addEventListener("focusin", aoFocar);
+
+    return () => {
+      window.removeEventListener("scroll", aoRolar);
+      cabecalho.removeEventListener("focusin", aoFocar);
+    };
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("pereiratatto-token");
@@ -300,7 +334,7 @@ function Aplicacao() {
 
   return (
     <div className="aplicacao">
-      <header className="cabecalho">
+      <header className="cabecalho" ref={cabecalhoRef}>
         <a className="marca" href="#inicio" onClick={() => definirTelaAtual(usuario?.perfil === "cliente" ? "pedir" : "agenda")}>
           Pereira<span>Tatto</span>
         </a>
@@ -308,10 +342,9 @@ function Aplicacao() {
 
         {usuario && (
           <div className="seletor-perfil" role="group" aria-label="Sessão do usuário">
-            <span className="rotulo-perfil">Sessão ativa</span>
             <div className="opcoes-perfil">
               <button className="opcao-perfil ativa" type="button">
-                <span className="icone-perfil" aria-hidden="true">{usuario.perfil === "cliente" ? "B" : "V"}</span>
+                <span className="icone-perfil" aria-hidden="true">{usuario.nome.charAt(0).toUpperCase()}</span>
                 <span><strong>{usuario.nome}</strong><small>{usuario.perfil === "cliente" ? "Cliente" : "Tatuador"}</small></span>
               </button>
             </div>
