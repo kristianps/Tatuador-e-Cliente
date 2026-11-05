@@ -1,0 +1,17 @@
+{
+  "v": 4,
+  "createdOnFiles": { "v": 1, "at": "2026-11-05T23:15:00Z" },
+  "lists": "css",
+  "title": "Apresentação PereiraTatto",
+  "cover": "capa",
+  "order": ["capa", "roteiro", "bruna", "vitor", "solucao", "briefing", "marca", "telas-bruna", "telas-vitor", "publicado", "demo", "hash", "erros", "backlog", "ia", "uc3", "fim"],
+  "sections": {
+    "s0": { "description": "Abertura e roteiro da apresentação.", "start": "capa" },
+    "s1": { "description": "As duas personas, sua rotina e seu problema.", "start": "bruna" },
+    "s2": { "description": "A solução, o briefing, a marca e as telas do MVP.", "start": "solucao" },
+    "s3": { "description": "Demonstração do sistema publicado.", "start": "publicado" },
+    "s4": { "description": "Backlog, funcionalidade de IA e plano da UC3.", "start": "backlog" }
+  },
+  "faces": {},
+  "designSystems": []
+}
