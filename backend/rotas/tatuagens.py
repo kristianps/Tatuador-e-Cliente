@@ -8,7 +8,7 @@ from servicos import tatuagem as servico_tatuagem
 from servicos import usuario as servico_usuario
 
 # APIRouter agrupa as rotas deste recurso para o main.py incluí-las na aplicação.
-router = APIRouter(tags=["Tatuagens"])
+router = APIRouter(prefix="/tatuagens", tags=["Tatuagens"])
 
 # NOVO: define que as duas personas do projeto fazem parte do mesmo grupo de acesso total.
 # O cliente e o tatuador podem usar todas as rotas essenciais do sistema.
@@ -16,7 +16,7 @@ GRUPOS_PERMITIDOS = {servico_usuario.GRUPO_CLIENTE, servico_usuario.GRUPO_TATUAD
 
 
 # Optional deixa cada filtro opcional; response_model documenta e valida os itens devolvidos.
-@router.get("/", response_model=List[TatuagemSaida])
+@router.get("", response_model=List[TatuagemSaida])
 def listar_tatuagens(
     etapa: Optional[str] = None,
     cliente_id: Optional[int] = None,
@@ -44,7 +44,7 @@ def mostrar_tatuagem(
 
 # Cria um pedido com a etapa inicial e responde com status 201 por ser um novo recurso.
 @router.post(
-    "/",
+    "",
     response_model=TatuagemSaida,
     status_code=status.HTTP_201_CREATED,
 )
