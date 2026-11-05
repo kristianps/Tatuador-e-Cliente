@@ -1,4 +1,4 @@
-const backendLocal = "http://127.0.0.1:8001";
+const backendLocal = "http://127.0.0.1:8000";
 const backendProdução = "https://backend-two-gray-28.vercel.app";
 
 const enderecoApi =
