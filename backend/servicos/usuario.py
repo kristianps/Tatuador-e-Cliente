@@ -10,14 +10,13 @@ from repositorios import usuario as repositorio_usuario
 
 security = HTTPBearer()
 
-# NOVO: definição dos grupos do sistema. Cada persona do projeto vira um grupo.
-# O projeto agora admite apenas o perfil de tatuador como usuário principal.
+# O sistema permite dois perfis válidos: cliente e tatuador.
+# Qualquer conta real registrada deve conseguir autenticar corretamente.
 GRUPO_CLIENTE = "cliente"
 GRUPO_TATUADOR = "tatuador"
 
-# NOVO: conjunto com os grupos que possuem acesso total ao sistema neste momento.
-# Como o projeto tem um único perfil de usuário permitido, o acesso total fica restrito ao tatuador.
-GRUPOS_COM_ACESSO_TOTAL = {GRUPO_TATUADOR}
+# Ambos os perfis podem operar no sistema, como previsto no fluxo do projeto.
+GRUPOS_COM_ACESSO_TOTAL = {GRUPO_CLIENTE, GRUPO_TATUADOR}
 
 
 # Usa um hash PBKDF2 para manter a senha fora do código e permitir a validação no login.
@@ -47,7 +46,7 @@ def cadastrar_usuario(
 ) -> dict:
     perfil_normalizado = perfil.lower().strip()
     if perfil_normalizado not in GRUPOS_COM_ACESSO_TOTAL:
-        raise ValueError("Perfil inválido. Use 'tatuador'.")
+        raise ValueError("Perfil inválido. Use 'cliente' ou 'tatuador'.")
 
     usuario = repositorio_usuario.criar_usuario(
         nome, email, senha, perfil_normalizado

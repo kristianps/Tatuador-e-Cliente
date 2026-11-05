@@ -46,6 +46,7 @@ def inicializar() -> None:
 def criar_usuarios_iniciais() -> None:
     usuarios = [
         ("Vitor", "vitor@pereiratatto.com", "vitor123", "tatuador"),
+        ("Bruna", "bruna@pereiratatto.com", "bruna123", "cliente"),
     ]
 
     with closing(_conectar()) as banco:

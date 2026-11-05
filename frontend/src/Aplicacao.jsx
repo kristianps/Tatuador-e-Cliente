@@ -246,7 +246,7 @@ function Aplicacao() {
             {mensagemCadastro && <p className="aviso sucesso" role="status">{mensagemCadastro}</p>}
           </div>
 
-          <p className="introducao">Demo: Vitor — vitor@pereiratatto.com / vitor123</p>
+          <p className="introducao">Demo: Vitor — vitor@pereiratatto.com / vitor123 • Bruna — bruna@pereiratatto.com / bruna123</p>
         </section>
       );
     }
