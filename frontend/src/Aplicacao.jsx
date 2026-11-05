@@ -24,7 +24,6 @@ function Aplicacao() {
   const [nome, definirNome] = useState("");
   const [email, definirEmail] = useState("vitor@pereiratatto.com");
   const [senha, definirSenha] = useState("vitor123");
-  const [perfil, definirPerfil] = useState("tatuador");
   const [usuario, definirUsuario] = useState(null);
   const [estadoLogin, definirEstadoLogin] = useState("pronto");
   const [estadoCadastro, definirEstadoCadastro] = useState("pronto");
@@ -122,7 +121,7 @@ function Aplicacao() {
     fetch(`${enderecoApi}/cadastro`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome, email, senha, perfil: "tatuador" }),
+      body: JSON.stringify({ nome, email, senha }),
     })
       .then((resposta) => {
         if (!resposta.ok) {
@@ -137,7 +136,6 @@ function Aplicacao() {
         definirNome("");
         definirEmail("vitor@pereiratatto.com");
         definirSenha("vitor123");
-        definirPerfil("tatuador");
         definirEstadoCadastro("pronto");
         definirAbaAtiva("login");
       })

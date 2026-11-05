@@ -15,9 +15,6 @@ security = HTTPBearer()
 GRUPO_CLIENTE = "cliente"
 GRUPO_TATUADOR = "tatuador"
 
-# Ambos os perfis podem operar no sistema, como previsto no fluxo do projeto.
-GRUPOS_COM_ACESSO_TOTAL = {GRUPO_CLIENTE, GRUPO_TATUADOR}
-
 
 # Usa um hash PBKDF2 para manter a senha fora do código e permitir a validação no login.
 def _hash_senha(senha: str) -> str:
@@ -41,16 +38,9 @@ def autenticar_usuario(email: str, senha: str) -> Optional[dict]:
     return usuario
 
 
-def cadastrar_usuario(
-    nome: str, email: str, senha: str, perfil: str = GRUPO_TATUADOR
-) -> dict:
-    perfil_normalizado = perfil.lower().strip()
-    if perfil_normalizado not in GRUPOS_COM_ACESSO_TOTAL:
-        raise ValueError("Perfil inválido. Use 'cliente' ou 'tatuador'.")
-
-    usuario = repositorio_usuario.criar_usuario(
-        nome, email, senha, perfil_normalizado
-    )
+# Todo cadastro público cria uma conta de cliente, sem aceitar outro perfil vindo da requisição.
+def cadastrar_usuario(nome: str, email: str, senha: str) -> dict:
+    usuario = repositorio_usuario.criar_usuario(nome, email, senha, GRUPO_CLIENTE)
     if usuario is None:
         raise ValueError("Não foi possível criar o usuário.")
     return usuario

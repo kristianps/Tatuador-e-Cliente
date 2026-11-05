@@ -19,7 +19,6 @@ def cadastrar(dados: UsuarioCadastroEntrada):
             nome=dados.nome,
             email=dados.email.lower(),
             senha=dados.senha,
-            perfil=dados.perfil,
         )
     except ValueError as erro:
         raise HTTPException(

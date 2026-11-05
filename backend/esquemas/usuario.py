@@ -7,11 +7,11 @@ class UsuarioLoginEntrada(BaseModel):
     senha: str = Field(min_length=4)
 
 
+# O perfil não faz parte da entrada: quem define o perfil de uma conta nova é o backend.
 class UsuarioCadastroEntrada(BaseModel):
     nome: str = Field(min_length=2, max_length=120)
     email: EmailStr
     senha: str = Field(min_length=6, max_length=100)
-    perfil: str = "tatuador"
 
 
 class UsuarioSaida(BaseModel):
