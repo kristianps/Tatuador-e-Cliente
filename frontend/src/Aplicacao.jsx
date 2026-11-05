@@ -103,7 +103,12 @@ function Aplicacao() {
         definirTelaAtual(resultado.usuario.perfil === "cliente" ? "pedir" : "agenda");
       })
       .catch((erro) => {
-        definirErroLogin(erro.message);
+        const mensagem =
+          erro?.message === "Failed to fetch"
+            ? "Não foi possível conectar ao servidor. Verifique se a API está em execução e se a URL está correta."
+            : erro?.message || "Não foi possível concluir o login.";
+
+        definirErroLogin(mensagem);
         definirEstadoLogin("erro");
       });
   }
@@ -137,7 +142,12 @@ function Aplicacao() {
         definirAbaAtiva("login");
       })
       .catch((erro) => {
-        definirErroCadastro(erro.message);
+        const mensagem =
+          erro?.message === "Failed to fetch"
+            ? "Não foi possível conectar ao servidor. Verifique se a API está em execução e se a URL está correta."
+            : erro?.message || "Não foi possível criar a conta.";
+
+        definirErroCadastro(mensagem);
         definirEstadoCadastro("erro");
       });
   }
