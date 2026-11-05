@@ -22,8 +22,11 @@ const figurasIniciais = [
 
 function Aplicacao() {
   const [nome, definirNome] = useState("");
-  const [email, definirEmail] = useState("vitor@pereiratatto.com");
-  const [senha, definirSenha] = useState("vitor123");
+  const [email, definirEmail] = useState("");
+  const [senha, definirSenha] = useState("");
+  const [emailCadastro, definirEmailCadastro] = useState("");
+  const [senhaCadastro, definirSenhaCadastro] = useState("");
+  const [confirmacaoSenha, definirConfirmacaoSenha] = useState("");
   const [usuario, definirUsuario] = useState(null);
   const [estadoLogin, definirEstadoLogin] = useState("pronto");
   const [estadoCadastro, definirEstadoCadastro] = useState("pronto");
@@ -60,10 +63,19 @@ function Aplicacao() {
     localStorage.setItem("pereiratatto-usuario", JSON.stringify(dados));
   }
 
+  // Ao trocar de aba, os avisos da aba anterior deixam de valer.
+  function trocarAba(aba) {
+    definirAbaAtiva(aba);
+    definirErroLogin("");
+    definirErroCadastro("");
+    definirMensagemCadastro("");
+  }
+
   function fazerLogin(evento) {
     evento.preventDefault();
     definirEstadoLogin("carregando");
     definirErroLogin("");
+    definirMensagemCadastro("");
 
     fetch(`${enderecoApi}/login`, {
       method: "POST",
@@ -77,7 +89,9 @@ function Aplicacao() {
           let detalhe = "Credenciais inválidas.";
           try {
             const json = JSON.parse(texto);
-            detalhe = json.detail || detalhe;
+            if (typeof json.detail === "string") {
+              detalhe = json.detail;
+            }
           } catch {
             detalhe = texto || detalhe;
           }
@@ -98,6 +112,8 @@ function Aplicacao() {
         localStorage.setItem("pereiratatto-token", resultado.access_token);
         localStorage.setItem("pereiratatto-usuario", JSON.stringify(resultado.usuario));
         definirUsuario(resultado.usuario);
+        definirEmail("");
+        definirSenha("");
         definirEstadoLogin("pronto");
         definirTelaAtual(resultado.usuario.perfil === "cliente" ? "pedir" : "agenda");
       })
@@ -114,19 +130,30 @@ function Aplicacao() {
 
   function fazerCadastro(evento) {
     evento.preventDefault();
-    definirEstadoCadastro("carregando");
     definirErroCadastro("");
     definirMensagemCadastro("");
+
+    if (senhaCadastro !== confirmacaoSenha) {
+      definirErroCadastro("As senhas não coincidem.");
+      definirEstadoCadastro("erro");
+      return;
+    }
+
+    definirEstadoCadastro("carregando");
 
     fetch(`${enderecoApi}/cadastro`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome, email, senha }),
+      body: JSON.stringify({ nome, email: emailCadastro, senha: senhaCadastro }),
     })
       .then((resposta) => {
         if (!resposta.ok) {
           return resposta.json().then((detalhe) => {
-            throw new Error(detalhe.detail || "Não foi possível criar a conta.");
+            throw new Error(
+              typeof detalhe.detail === "string"
+                ? detalhe.detail
+                : "Não foi possível criar a conta. Confira os dados informados."
+            );
           });
         }
         return resposta.json();
@@ -134,8 +161,11 @@ function Aplicacao() {
       .then(() => {
         definirMensagemCadastro("Conta criada com sucesso! Faça login para continuar.");
         definirNome("");
-        definirEmail("vitor@pereiratatto.com");
-        definirSenha("vitor123");
+        definirEmail(emailCadastro);
+        definirSenha("");
+        definirEmailCadastro("");
+        definirSenhaCadastro("");
+        definirConfirmacaoSenha("");
         definirEstadoCadastro("pronto");
         definirAbaAtiva("login");
       })
@@ -178,7 +208,7 @@ function Aplicacao() {
                 className={abaAtiva === "login" ? "aba-login ativa" : "aba-login"}
                 role="tab"
                 aria-selected={abaAtiva === "login"}
-                onClick={() => definirAbaAtiva("login")}
+                onClick={() => trocarAba("login")}
               >
                 Entrar
               </button>
@@ -187,7 +217,7 @@ function Aplicacao() {
                 className={abaAtiva === "cadastro" ? "aba-login ativa" : "aba-login"}
                 role="tab"
                 aria-selected={abaAtiva === "cadastro"}
-                onClick={() => definirAbaAtiva("cadastro")}
+                onClick={() => trocarAba("cadastro")}
               >
                 Criar conta
               </button>
@@ -201,11 +231,11 @@ function Aplicacao() {
                 <form className="formulario" onSubmit={fazerLogin}>
                   <label className="campo-local-corpo">
                     E-mail
-                    <input type="email" value={email} onChange={(evento) => definirEmail(evento.target.value)} required />
+                    <input type="email" name="email" autoComplete="username" placeholder="seu@email.com" value={email} onChange={(evento) => definirEmail(evento.target.value)} required />
                   </label>
                   <label className="campo-local-corpo">
                     Senha
-                    <input type="password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required />
+                    <input type="password" name="senha" autoComplete="current-password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required />
                   </label>
                   <button className="botao-principal" type="submit" disabled={estadoLogin === "carregando"}>
                     {estadoLogin === "carregando" ? "Entrando…" : "Entrar"}
@@ -220,17 +250,22 @@ function Aplicacao() {
                 <form className="formulario" onSubmit={fazerCadastro}>
                   <label className="campo-local-corpo">
                     Nome
-                    <input type="text" value={nome} onChange={(evento) => definirNome(evento.target.value)} required minLength={2} />
+                    <input type="text" name="nome" autoComplete="name" placeholder="Seu nome" value={nome} onChange={(evento) => definirNome(evento.target.value)} required minLength={2} />
                   </label>
                   <label className="campo-local-corpo">
                     E-mail
-                    <input type="email" value={email} onChange={(evento) => definirEmail(evento.target.value)} required />
+                    <input type="email" name="email" autoComplete="email" placeholder="seu@email.com" value={emailCadastro} onChange={(evento) => definirEmailCadastro(evento.target.value)} required />
                   </label>
                   <label className="campo-local-corpo">
                     Senha
-                    <input type="password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required minLength={6} />
+                    <input type="password" name="nova-senha" autoComplete="new-password" value={senhaCadastro} onChange={(evento) => definirSenhaCadastro(evento.target.value)} required minLength={8} maxLength={100} />
+                    <small className="dica-campo">Use pelo menos 8 caracteres.</small>
                   </label>
-                  <button className="botao-secundario" type="submit" disabled={estadoCadastro === "carregando"}>
+                  <label className="campo-local-corpo">
+                    Confirmar senha
+                    <input type="password" name="confirmar-senha" autoComplete="new-password" value={confirmacaoSenha} onChange={(evento) => definirConfirmacaoSenha(evento.target.value)} required minLength={8} maxLength={100} />
+                  </label>
+                  <button className="botao-principal" type="submit" disabled={estadoCadastro === "carregando"}>
                     {estadoCadastro === "carregando" ? "Cadastrando…" : "Cadastrar conta"}
                   </button>
                 </form>
@@ -244,7 +279,6 @@ function Aplicacao() {
             {mensagemCadastro && <p className="aviso sucesso" role="status">{mensagemCadastro}</p>}
           </div>
 
-          <p className="introducao">Demo: Vitor — vitor@pereiratatto.com / vitor123 • Bruna — bruna@pereiratatto.com / bruna123</p>
         </section>
       );
     }

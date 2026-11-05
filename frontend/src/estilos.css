@@ -1024,7 +1024,7 @@ h2 { margin: 0; font-size: 19px; }
   border: 0;
   border-radius: 10px;
   background: transparent;
-  color: var(--texto-fraco);
+  color: var(--muted);
   font-weight: 700;
   font-size: 0.95rem;
   padding: 12px 14px;
@@ -1033,11 +1033,28 @@ h2 { margin: 0; font-size: 19px; }
 }
 
 .aba-login.ativa {
-  background: var(--cor-primaria);
+  background: var(--vinho);
   color: #fff;
   box-shadow: var(--sombra-moderna);
 }
 
 .auth-card .sobretitulo {
   margin: 0;
+}
+
+/* Cartão estreito e centralizado, com campos e botão na mesma largura. */
+.auth-card, .auth-mensagens {
+  width: 100%;
+  max-width: 480px;
+  margin-inline: auto;
+}
+
+.auth-card .formulario { max-width: none; }
+.auth-card .campo-local-corpo { max-width: none; }
+.auth-card .botao-principal { justify-self: stretch; }
+
+.dica-campo {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
 }
