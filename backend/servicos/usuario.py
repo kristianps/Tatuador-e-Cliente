@@ -1,11 +1,24 @@
+from email.message import EmailMessage
 import hashlib
+import secrets
+import smtplib
+import ssl
 from typing import Optional
 
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from configuracao import JWT_ALGORITHM, JWT_SECRET_KEY
+from configuracao import (
+    EMAIL_REMETENTE,
+    JWT_ALGORITHM,
+    JWT_SECRET_KEY,
+    SMTP_HOST,
+    SMTP_PORTA,
+    SMTP_SENHA,
+    SMTP_USUARIO,
+    URL_DO_SITE,
+)
 from repositorios import usuario as repositorio_usuario
 
 security = HTTPBearer()
@@ -14,6 +27,10 @@ security = HTTPBearer()
 # Qualquer conta real registrada deve conseguir autenticar corretamente.
 GRUPO_CLIENTE = "cliente"
 GRUPO_TATUADOR = "tatuador"
+
+# Regras da recuperação de senha: o link vence rápido e cada conta recebe poucos e-mails por hora.
+MINUTOS_VALIDADE_RECUPERACAO = 30
+MAXIMO_RECUPERACOES_POR_HORA = 3
 
 
 # Usa um hash PBKDF2 para manter a senha fora do código e permitir a validação no login.
@@ -44,6 +61,65 @@ def cadastrar_usuario(nome: str, email: str, senha: str) -> dict:
     if usuario is None:
         raise ValueError("Não foi possível criar o usuário.")
     return usuario
+
+
+# Guarda só o resumo do código: quem ler o banco não consegue montar um link válido.
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+# Monta e envia o e-mail. O código vai depois do # porque essa parte da URL não chega aos servidores nem aos logs.
+def _enviar_email_recuperacao(usuario: dict, token: str) -> None:
+    mensagem = EmailMessage()
+    mensagem["Subject"] = "Recuperação de senha - PereiraTatto"
+    mensagem["From"] = EMAIL_REMETENTE
+    mensagem["To"] = usuario["email"]
+    mensagem.set_content(
+        f"Olá, {usuario['nome']}!\n\n"
+        "Recebemos um pedido para criar uma nova senha na PereiraTatto.\n"
+        "Abra o link abaixo para continuar:\n\n"
+        f"{URL_DO_SITE}/#redefinir-senha={token}\n\n"
+        f"O link vale por {MINUTOS_VALIDADE_RECUPERACAO} minutos e só pode ser usado uma vez.\n"
+        "Se não foi você, ignore este e-mail: sua senha continua a mesma.\n"
+    )
+
+    # O timeout evita que a requisição fique presa se o servidor de e-mail não responder.
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORTA, timeout=10) as servidor:
+        # starttls ativa a criptografia antes de enviar a senha do e-mail.
+        servidor.starttls(context=ssl.create_default_context())
+        servidor.login(SMTP_USUARIO, SMTP_SENHA)
+        servidor.send_message(mensagem)
+
+
+# Cria o pedido e envia o link. Não devolve nada para a rota responder igual, exista a conta ou não.
+def solicitar_recuperacao_senha(email: str) -> None:
+    usuario = repositorio_usuario.buscar_por_email(email)
+    if usuario is None:
+        return
+
+    if not (SMTP_USUARIO and SMTP_SENHA and EMAIL_REMETENTE and URL_DO_SITE):
+        print("Aviso: envio de e-mail não configurado. Defina SMTP_USUARIO, SMTP_SENHA e URL_DO_SITE.")
+        return
+
+    if repositorio_usuario.contar_recuperacoes_recentes(usuario["id"]) >= MAXIMO_RECUPERACOES_POR_HORA:
+        return
+
+    # secrets gera um código imprevisível, próprio para segurança; o módulo random não serve para isso.
+    token = secrets.token_urlsafe(32)
+    repositorio_usuario.criar_recuperacao(
+        usuario["id"], _hash_token(token), MINUTOS_VALIDADE_RECUPERACAO
+    )
+
+    # A falha fica só no log da Vercel, para a resposta não revelar que a conta existe.
+    try:
+        _enviar_email_recuperacao(usuario, token)
+    except (OSError, smtplib.SMTPException) as erro:
+        print(f"Aviso: falha ao enviar o e-mail de recuperação: {type(erro).__name__}")
+
+
+# Devolve True quando a senha mudou; a rota escolhe o status com base nesse resultado.
+def redefinir_senha(token: str, senha: str) -> bool:
+    return repositorio_usuario.redefinir_senha_por_token(_hash_token(token), _hash_senha(senha))
 
 
 # Gera o token JWT que acompanhará as requisições autenticadas no backend.

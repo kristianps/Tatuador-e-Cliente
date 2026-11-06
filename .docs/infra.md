@@ -83,7 +83,24 @@ Observações:
 8. Inicie a API com `fastapi dev` e teste o login de cada perfil.
 9. Valide o fluxo do cliente e do tatuador separadamente.
 
-## 6. Observações finais
+## 6. Recuperação de senha
+
+```mermaid
+flowchart LR
+    usuario["Navegador\nCliente"] -->|HTTPS 443\n/api/recuperar-senha| api["API na Vercel\nFastAPI"]
+    api -->|PostgreSQL SSL/TLS| supabase["Supabase\nPostgreSQL"]
+    api -->|SMTP com TLS 587| gmail["Gmail\nsmtp.gmail.com"]
+    gmail -->|e-mail com o link| usuario
+```
+
+- Navegador: roda na máquina do usuário; é o cliente e não fala com o Gmail.
+- API na Vercel: cria o pedido e envia o e-mail; o acesso à porta 587 é de saída.
+- Banco no Supabase: a tabela `recuperacoes_senha` guarda só o hash do código, com RLS ativo.
+- Gmail: serviço externo; exige uma conta com verificação em duas etapas e uma senha de app.
+- Variáveis no projeto `backend` da Vercel: `SMTP_USUARIO`, `SMTP_SENHA`, `EMAIL_REMETENTE` e `URL_DO_SITE`.
+- Sem essas variáveis, a API responde normalmente, mas não envia e-mail e registra um aviso no log.
+
+## 7. Observações finais
 
 - O projeto atual ainda continha pontos específicos de MySQL; a troca para PostgreSQL exige revisar todas as strings de conexão e os comandos SQL específicos.
 - A API continua sendo a camada responsável pela validação, autenticação e escrita no banco.

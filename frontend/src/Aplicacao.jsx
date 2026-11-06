@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { enderecoApi } from "./api.js";
+import RecuperarSenha from "./telas/RecuperarSenha.jsx";
 import Agenda from "./telas/Agenda.jsx";
 import Ficha from "./telas/Ficha.jsx";
 import MinhasTatuagens from "./telas/MinhasTatuagens.jsx";
@@ -34,6 +35,10 @@ function Aplicacao() {
   const [erroCadastro, definirErroCadastro] = useState("");
   const [mensagemCadastro, definirMensagemCadastro] = useState("");
   const [abaAtiva, definirAbaAtiva] = useState("login");
+  // Lê uma única vez o código do link enviado por e-mail, que vem depois do # no endereço.
+  const [tokenRecuperacao, definirTokenRecuperacao] = useState(
+    () => window.location.hash.match(/^#redefinir-senha=(.+)$/)?.[1] ?? ""
+  );
   const [telaAtual, definirTelaAtual] = useState("pedir");
   const [tatuagemId, definirTatuagemId] = useState(null);
   const cabecalhoRef = useRef(null);
@@ -72,6 +77,12 @@ function Aplicacao() {
   }, []);
 
   useEffect(() => {
+    // Quem chega pelo link vai direto criar a senha, e o código sai do endereço e do histórico.
+    if (tokenRecuperacao) {
+      window.history.replaceState(null, "", window.location.pathname);
+      return;
+    }
+
     const token = localStorage.getItem("pereiratatto-token");
     const usuarioSalvo = localStorage.getItem("pereiratatto-usuario");
 
@@ -222,6 +233,19 @@ function Aplicacao() {
     definirTatuagemId(null);
   }
 
+  function fecharRecuperacao() {
+    definirTokenRecuperacao("");
+    trocarAba("login");
+  }
+
+  // Depois de trocar a senha, encerra qualquer sessão salva e pede o login com a nova senha.
+  function concluirRecuperacao() {
+    localStorage.removeItem("pereiratatto-token");
+    localStorage.removeItem("pereiratatto-usuario");
+    fecharRecuperacao();
+    definirMensagemCadastro("Senha alterada com sucesso! Entre com a nova senha.");
+  }
+
   function abrirFicha(id) {
     definirTatuagemId(id);
     definirTelaAtual("ficha");
@@ -232,6 +256,14 @@ function Aplicacao() {
   }
 
   function mostrarTela() {
+    if (!usuario && (tokenRecuperacao || abaAtiva === "recuperar")) {
+      return (
+        <section className="painel painel-auth">
+          <RecuperarSenha token={tokenRecuperacao} aoVoltar={fecharRecuperacao} aoRedefinir={concluirRecuperacao} />
+        </section>
+      );
+    }
+
     if (!usuario) {
       return (
         <section className="painel painel-auth">
@@ -271,6 +303,9 @@ function Aplicacao() {
                     Senha
                     <input type="password" name="senha" autoComplete="current-password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required />
                   </label>
+                  <button className="link-voltar link-esqueci" type="button" onClick={() => trocarAba("recuperar")}>
+                    Esqueci minha senha
+                  </button>
                   <button className="botao-principal" type="submit" disabled={estadoLogin === "carregando"}>
                     {estadoLogin === "carregando" ? "Entrando…" : "Entrar"}
                   </button>

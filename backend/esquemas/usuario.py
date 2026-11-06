@@ -14,6 +14,21 @@ class UsuarioCadastroEntrada(BaseModel):
     senha: str = Field(min_length=8, max_length=100)
 
 
+# Pede o link de recuperação informando apenas o e-mail da conta.
+class RecuperacaoSenhaEntrada(BaseModel):
+    email: EmailStr
+
+
+# Recebe o código que veio no link e a nova senha, com o mesmo mínimo do cadastro.
+class RedefinicaoSenhaEntrada(BaseModel):
+    token: str = Field(min_length=20, max_length=200)
+    senha: str = Field(min_length=8, max_length=100)
+
+
+class MensagemSaida(BaseModel):
+    mensagem: str
+
+
 class UsuarioSaida(BaseModel):
     id: int
     nome: str

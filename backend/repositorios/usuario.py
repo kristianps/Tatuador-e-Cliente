@@ -39,6 +39,22 @@ def inicializar() -> None:
                 )
                 """
             )
+            # Guarda os pedidos de recuperação de senha. ON DELETE CASCADE apaga os pedidos junto com a conta.
+            # TIMESTAMPTZ é uma data com fuso horário, para a validade não depender do fuso do servidor.
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS recuperacoes_senha (
+                    id SERIAL PRIMARY KEY,
+                    usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+                    token_hash CHAR(64) NOT NULL UNIQUE,
+                    expira_em TIMESTAMPTZ NOT NULL,
+                    usado_em TIMESTAMPTZ,
+                    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            # Sem isso, a tabela ficaria aberta pela API pública do Supabase; as outras tabelas também usam RLS.
+            cursor.execute("ALTER TABLE recuperacoes_senha ENABLE ROW LEVEL SECURITY")
             banco.commit()
 
 
@@ -124,3 +140,64 @@ def criar_usuario(nome: str, email: str, senha: str, perfil: str = "cliente"):
             usuario = cursor.fetchone()
             banco.commit()
             return dict(usuario)
+
+
+# Conta os pedidos da última hora para limitar quantos e-mails uma conta pode receber.
+def contar_recuperacoes_recentes(usuario_id: int) -> int:
+    with closing(_conectar()) as banco:
+        with banco.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT COUNT(*) FROM recuperacoes_senha
+                WHERE usuario_id = %s AND criado_em > NOW() - INTERVAL '1 hour'
+                """,
+                (usuario_id,),
+            )
+            return cursor.fetchone()[0]
+
+
+# Registra um novo pedido e cancela os anteriores, para só o link mais recente funcionar.
+def criar_recuperacao(usuario_id: int, token_hash: str, minutos_validade: int) -> None:
+    with closing(_conectar()) as banco:
+        with banco.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE recuperacoes_senha SET usado_em = NOW()
+                WHERE usuario_id = %s AND usado_em IS NULL
+                """,
+                (usuario_id,),
+            )
+            # A validade é calculada pelo relógio do banco, o mesmo usado na hora de conferir o link.
+            cursor.execute(
+                """
+                INSERT INTO recuperacoes_senha (usuario_id, token_hash, expira_em)
+                VALUES (%s, %s, NOW() + make_interval(mins => %s))
+                """,
+                (usuario_id, token_hash, minutos_validade),
+            )
+            banco.commit()
+
+
+# Troca a senha se o link for válido. Tudo ocorre em uma transação: ou o link é gasto e a senha muda, ou nada muda.
+def redefinir_senha_por_token(token_hash: str, senha_hash: str) -> bool:
+    with closing(_conectar()) as banco:
+        with banco.cursor() as cursor:
+            # O UPDATE confere e gasta o link de uma vez, então dois envios simultâneos não usam o mesmo link.
+            cursor.execute(
+                """
+                UPDATE recuperacoes_senha SET usado_em = NOW()
+                WHERE token_hash = %s AND usado_em IS NULL AND expira_em > NOW()
+                RETURNING usuario_id
+                """,
+                (token_hash,),
+            )
+            recuperacao = cursor.fetchone()
+            if recuperacao is None:
+                return False
+
+            cursor.execute(
+                "UPDATE usuarios SET senha_hash = %s WHERE id = %s",
+                (senha_hash, recuperacao[0]),
+            )
+            banco.commit()
+            return True

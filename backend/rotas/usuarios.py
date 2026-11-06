@@ -2,6 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from esquemas.usuario import (
     LoginResposta,
+    MensagemSaida,
+    RecuperacaoSenhaEntrada,
+    RedefinicaoSenhaEntrada,
     UsuarioCadastroEntrada,
     UsuarioLoginEntrada,
     UsuarioSaida,
@@ -55,6 +58,24 @@ def login(dados: UsuarioLoginEntrada):
             "perfil": usuario["perfil"],
         },
     }
+
+
+# Responde sempre o mesmo texto para ninguém descobrir quais e-mails têm conta.
+@router.post("/recuperar-senha", response_model=MensagemSaida)
+def recuperar_senha(dados: RecuperacaoSenhaEntrada):
+    servico_usuario.solicitar_recuperacao_senha(dados.email.lower())
+    return {"mensagem": "Se houver uma conta com esse e-mail, enviamos um link para criar uma nova senha."}
+
+
+# Troca a senha usando o código do link; link vencido, usado ou inventado recebe a mesma resposta.
+@router.post("/redefinir-senha", response_model=MensagemSaida)
+def redefinir_senha(dados: RedefinicaoSenhaEntrada):
+    if not servico_usuario.redefinir_senha(dados.token, dados.senha):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Este link é inválido ou expirou. Peça um novo.",
+        )
+    return {"mensagem": "Senha alterada com sucesso."}
 
 
 # Retorna o usuário autenticado para a tela confirmar a sessão em uso.

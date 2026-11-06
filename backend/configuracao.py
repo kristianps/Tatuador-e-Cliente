@@ -28,3 +28,16 @@ BANCO_TIPO = os.getenv("BANCO_TIPO") or "postgresql"
 # Configura a autenticação por JWT usada no login e nas rotas protegidas.
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY") or "pereiratatto-secreto-demo"
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM") or "HS256"
+
+# Dados do envio de e-mail da recuperação de senha. O padrão aponta para o SMTP do Gmail.
+# SMTP é o protocolo usado para enviar e-mails; a porta 587 inicia sem criptografia e ativa o TLS em seguida.
+SMTP_HOST = os.getenv("SMTP_HOST") or "smtp.gmail.com"
+SMTP_PORTA = int(os.getenv("SMTP_PORTA") or "587")
+SMTP_USUARIO = (os.getenv("SMTP_USUARIO") or "").strip()
+# O Google exibe a senha de app com espaços; eles não fazem parte dela.
+SMTP_SENHA = (os.getenv("SMTP_SENHA") or "").replace(" ", "")
+EMAIL_REMETENTE = (os.getenv("EMAIL_REMETENTE") or SMTP_USUARIO).strip()
+
+# Endereço público da tela usado no link do e-mail. Vem da configuração, e não da requisição,
+# para que ninguém consiga enviar um link apontando para outro site.
+URL_DO_SITE = (os.getenv("URL_DO_SITE") or "").strip().rstrip("/")

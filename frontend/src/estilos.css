@@ -1066,6 +1066,10 @@ h2 { margin: 0; font-size: 19px; }
 .auth-card .campo-local-corpo { max-width: none; }
 .auth-card .botao-principal { justify-self: stretch; }
 
+.auth-card .link-voltar { justify-self: start; margin: 0; }
+.auth-card .aviso { margin: 0; }
+.auth-card > .dica-campo { margin: 0; }
+
 .dica-campo {
   color: var(--muted);
   font-size: 13px;
