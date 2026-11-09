@@ -84,9 +84,10 @@ function PedirTatuagem({ perfil, figuras }) {
         }
         return resposta.json();
       })
-      .then((tatuagem) => {
+      .then(() => {
         definirEstado("pronto");
-        definirMensagem(`Pedido ${tatuagem.id} enviado. Etapa atual: ${tatuagem.etapa}.`);
+        // A cliente só precisa saber que o pedido chegou; o número é de uso interno do estúdio.
+        definirMensagem("Pedido enviado com sucesso.");
         definirFiguraSelecionada("");
         definirIdeiaLivre("");
         definirLocalCorpo("");
