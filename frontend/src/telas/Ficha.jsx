@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { enderecoApi } from "../api.js";
+import Conversa from "../componentes/Conversa.jsx";
 
 // Mantém os valores que a API espera e apresenta nomes corrigidos na tela.
 const etapas = ["pedida", "desenho aprovado", "em sessões", "finalizada"];
@@ -24,7 +25,7 @@ function nomeEtapa(etapa) {
 }
 
 // Permite escolher uma etapa independente para cada tatuagem.
-function Ficha({ tatuagemId, aoVoltar }) {
+function Ficha({ tatuagemId, usuario, aoVoltar }) {
   const [tatuagem, definirTatuagem] = useState(null);
   const [passos, definirPassos] = useState([]);
   const [etapaSelecionada, definirEtapaSelecionada] = useState("");
@@ -203,6 +204,9 @@ function Ficha({ tatuagemId, aoVoltar }) {
 
           {estado === "erro" && <p className="aviso erro" role="alert">{erro}</p>}
           {mensagem && <p className="aviso sucesso" role="status">{mensagem}</p>}
+
+          {/* O tatuador conversa com a cliente sobre este pedido, sem sair da ficha. */}
+          <Conversa tatuagemId={tatuagem.id} usuario={usuario} />
         </div>
 
         {passos.length > 0 && (

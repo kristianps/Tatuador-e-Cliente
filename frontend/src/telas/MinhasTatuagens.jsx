@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { enderecoApi } from "../api.js";
+import Conversa from "../componentes/Conversa.jsx";
 
 const chaveCelebracoes = (clienteId) => `pereiratatto-finalizadas-${clienteId}`;
 
@@ -176,7 +177,7 @@ function MinhasTatuagens({ perfil }) {
                   <span className="etapa">{tatuagem.etapa}</span>
                 </div>
                 <button className="botao-secundario" onClick={() => abrirHistorico(tatuagem)}>
-                  Ver histórico
+                  Histórico e conversa
                 </button>
               </li>
             ))}
@@ -209,6 +210,9 @@ function MinhasTatuagens({ perfil }) {
                 ))}
               </ol>
             )}
+
+            {/* A conversa só existe dentro de um pedido já feito, abaixo do histórico dele. */}
+            <Conversa tatuagemId={tatuagemAberta.id} usuario={perfil} />
           </section>
         )}
       </div>

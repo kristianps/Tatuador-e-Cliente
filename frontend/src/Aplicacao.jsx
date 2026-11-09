@@ -363,7 +363,7 @@ function Aplicacao() {
     }
 
     if (telaAtual === "ficha") {
-      return <Ficha tatuagemId={tatuagemId} enderecoApi={enderecoApi} aoVoltar={voltarParaAgenda} />;
+      return <Ficha tatuagemId={tatuagemId} usuario={usuario} enderecoApi={enderecoApi} aoVoltar={voltarParaAgenda} />;
     }
 
     return <Agenda enderecoApi={enderecoApi} aoAbrirFicha={abrirFicha} />;
