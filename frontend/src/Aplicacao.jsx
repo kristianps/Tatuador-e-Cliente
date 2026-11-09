@@ -4,8 +4,10 @@ import { enderecoApi } from "./api.js";
 import RecuperarSenha from "./telas/RecuperarSenha.jsx";
 import Agenda from "./telas/Agenda.jsx";
 import Ficha from "./telas/Ficha.jsx";
+import Mensagens from "./telas/Mensagens.jsx";
 import MinhasTatuagens from "./telas/MinhasTatuagens.jsx";
 import PedirTatuagem from "./telas/PedirTatuagem.jsx";
+import { notificarNoNavegador, useMensagensNaoLidas } from "./notificacoes.js";
 
 const figurasIniciais = [
   { id: "rosa", nome: "Rosa", imagem: "/decalques/rosa-foto.jpg" },
@@ -41,7 +43,44 @@ function Aplicacao() {
   );
   const [telaAtual, definirTelaAtual] = useState("pedir");
   const [tatuagemId, definirTatuagemId] = useState(null);
+  // Pedido cuja conversa está aberta na aba Mensagens, e o aviso de mensagem nova mostrado na tela.
+  const [conversaId, definirConversaId] = useState(null);
+  const [aviso, definirAviso] = useState(null);
   const cabecalhoRef = useRef(null);
+
+  // Abre a aba Mensagens já na conversa do pedido escolhido.
+  function abrirConversa(id) {
+    definirConversaId(id);
+    definirTelaAtual("mensagens");
+    definirAviso(null);
+  }
+
+  // Chamada a cada mensagem nova que chega do outro lado (do estúdio para a cliente, ou da cliente para o tatuador).
+  function avisarMensagemNova(item) {
+    const conversaVisivel = !document.hidden && telaAtual === "mensagens" && conversaId === item.tatuagem_id;
+    // Quem já está com a conversa na tela vê a mensagem chegar; não precisa de aviso.
+    if (conversaVisivel) return;
+
+    definirAviso({ chave: item.ultima_id, item });
+    // Com a página em segundo plano, o aviso dentro dela passaria despercebido: usa o do navegador.
+    if (document.hidden) {
+      notificarNoNavegador(`Nova mensagem de ${item.ultimo_autor}`, item.ultimo_texto, () => abrirConversa(item.tatuagem_id));
+    }
+  }
+
+  const { pendentes, total: totalNaoLidas, atualizar: atualizarNaoLidas } = useMensagensNaoLidas(usuario, avisarMensagemNova);
+
+  // O aviso some sozinho depois de alguns segundos.
+  useEffect(() => {
+    if (!aviso) return undefined;
+    const temporizador = window.setTimeout(() => definirAviso(null), 8000);
+    return () => window.clearTimeout(temporizador);
+  }, [aviso]);
+
+  // Mostra a quantidade de não lidas no título da aba do navegador, visível mesmo em outra aba.
+  useEffect(() => {
+    document.title = totalNaoLidas > 0 ? `(${totalNaoLidas}) PereiraTatto` : "PereiraTatto";
+  }, [totalNaoLidas]);
 
   // A barra acompanha a rolagem: some aos poucos ao descer e volta na mesma medida ao subir.
   useEffect(() => {
@@ -231,6 +270,8 @@ function Aplicacao() {
     definirUsuario(null);
     definirTelaAtual("pedir");
     definirTatuagemId(null);
+    definirConversaId(null);
+    definirAviso(null);
   }
 
   function fecharRecuperacao() {
@@ -354,16 +395,28 @@ function Aplicacao() {
       );
     }
 
+    if (telaAtual === "mensagens") {
+      return (
+        <Mensagens
+          usuario={usuario}
+          pendentes={pendentes}
+          conversaId={conversaId}
+          aoSelecionar={definirConversaId}
+          aoLer={atualizarNaoLidas}
+        />
+      );
+    }
+
     if (usuario.perfil === "cliente" && telaAtual === "pedir") {
       return <PedirTatuagem perfil={usuario} enderecoApi={enderecoApi} figuras={figurasIniciais} />;
     }
 
     if (usuario.perfil === "cliente") {
-      return <MinhasTatuagens perfil={usuario} enderecoApi={enderecoApi} />;
+      return <MinhasTatuagens perfil={usuario} enderecoApi={enderecoApi} aoAbrirConversa={abrirConversa} />;
     }
 
     if (telaAtual === "ficha") {
-      return <Ficha tatuagemId={tatuagemId} usuario={usuario} enderecoApi={enderecoApi} aoVoltar={voltarParaAgenda} />;
+      return <Ficha tatuagemId={tatuagemId} enderecoApi={enderecoApi} aoVoltar={voltarParaAgenda} aoAbrirConversa={abrirConversa} />;
     }
 
     return <Agenda enderecoApi={enderecoApi} aoAbrirFicha={abrirFicha} />;
@@ -403,12 +456,30 @@ function Aplicacao() {
               <button className={telaAtual === "ficha" ? "aba ativa" : "aba"} onClick={() => definirTelaAtual("ficha")}>A ficha</button>
             </>
           )}
+          {/* A aba de mensagens é igual para os dois perfis e mostra quantas não lidas existem. */}
+          <button className={telaAtual === "mensagens" ? "aba ativa" : "aba"} onClick={() => definirTelaAtual("mensagens")}>
+            Mensagens
+            {totalNaoLidas > 0 && (
+              <span className="contador" aria-label={`${totalNaoLidas} não lidas`}>{totalNaoLidas}</span>
+            )}
+          </button>
         </nav>
       )}
 
       <main className="conteudo" id="inicio">
         {mostrarTela()}
       </main>
+
+      {/* Aviso de mensagem nova; role="status" faz o leitor de tela anunciar sem interromper. */}
+      {usuario && aviso && (
+        <div className="aviso-mensagem" role="status" key={aviso.chave}>
+          <button className="aviso-mensagem-corpo" type="button" onClick={() => abrirConversa(aviso.item.tatuagem_id)}>
+            <strong>Nova mensagem de {aviso.item.ultimo_autor}</strong>
+            <span>{aviso.item.ultimo_texto}</span>
+          </button>
+          <button className="aviso-mensagem-fechar" type="button" aria-label="Fechar aviso" onClick={() => definirAviso(null)}>×</button>
+        </div>
+      )}
 
       <footer className="rodape">PereiraTatto · cuidado em cada etapa</footer>
     </div>

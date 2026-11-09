@@ -39,3 +39,21 @@ def enviar_mensagem(
 
     mensagem = repositorio_mensagem.criar(tatuagem_id, usuario["id"], texto_limpo)
     return mensagem, tatuagem, None
+
+
+# Lista as conversas com mensagens não lidas para o aviso e os contadores da tela.
+# A cliente só enxerga os pedidos dela; o tatuador enxerga os de todas as clientes.
+def listar_nao_lidas(usuario: dict) -> list:
+    cliente_id = None if usuario["perfil"] == GRUPO_TATUADOR else usuario["id"]
+    return repositorio_mensagem.listar_nao_lidas(usuario["id"], usuario["perfil"], cliente_id)
+
+
+# Registra que a pessoa leu a conversa até a mensagem ate_id.
+# Devolve None quando o pedido não existe ou não é dela, para a rota responder 404.
+def marcar_como_lidas(tatuagem_id: int, usuario: dict, ate_id: int) -> Optional[bool]:
+    tatuagem = repositorio_tatuagem.buscar_por_id(tatuagem_id)
+    if tatuagem is None or not _pode_participar(tatuagem, usuario):
+        return None
+
+    repositorio_mensagem.marcar_lidas(usuario["id"], tatuagem_id, ate_id)
+    return True

@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 
 import { enderecoApi } from "../api.js";
-import Conversa from "../componentes/Conversa.jsx";
 
 const chaveCelebracoes = (clienteId) => `pereiratatto-finalizadas-${clienteId}`;
 
 // Mostra os pedidos da cliente e o histórico da tatuagem que ela abrir.
-function MinhasTatuagens({ perfil }) {
+function MinhasTatuagens({ perfil, aoAbrirConversa }) {
   // useState guarda a lista, o histórico selecionado e os estados de carregamento.
   const [tatuagens, definirTatuagens] = useState([]);
   const [estado, definirEstado] = useState("carregando");
@@ -177,7 +176,7 @@ function MinhasTatuagens({ perfil }) {
                   <span className="etapa">{tatuagem.etapa}</span>
                 </div>
                 <button className="botao-secundario" onClick={() => abrirHistorico(tatuagem)}>
-                  Histórico e conversa
+                  Ver histórico
                 </button>
               </li>
             ))}
@@ -211,8 +210,10 @@ function MinhasTatuagens({ perfil }) {
               </ol>
             )}
 
-            {/* A conversa só existe dentro de um pedido já feito, abaixo do histórico dele. */}
-            <Conversa tatuagemId={tatuagemAberta.id} usuario={perfil} />
+            {/* A conversa fica na aba Mensagens; este botão leva direto à conversa deste pedido. */}
+            <button className="botao-secundario botao-abrir-conversa" type="button" onClick={() => aoAbrirConversa(tatuagemAberta.id)}>
+              Conversar com o estúdio
+            </button>
           </section>
         )}
       </div>

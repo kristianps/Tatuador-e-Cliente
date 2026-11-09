@@ -1366,3 +1366,115 @@ h2 { margin: 0; font-size: 19px; }
 }
 .conversa-formulario .botao-principal { flex: none; }
 .conversa .aviso { margin: 0; }
+
+/* Contador de mensagens não lidas, na aba e em cada conversa. */
+.contador {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--vinho);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.botao-abrir-conversa { margin-top: 16px; }
+
+/* Convite para ligar o aviso do navegador. */
+.aviso-notificacoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.78);
+}
+.aviso-notificacoes p { margin: 0; color: var(--muted); font-size: 14px; }
+
+/* Aba Mensagens: lista de conversas e conversa aberta. */
+.area-mensagens { display: grid; gap: 16px; }
+.lista-conversas { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.item-conversa {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.78);
+  text-align: left;
+  cursor: pointer;
+}
+.item-conversa:hover { background: #fff; }
+.item-conversa.ativa { border-color: var(--vinho); box-shadow: inset 4px 0 0 var(--vinho); background: #fff; }
+.item-conversa-texto { display: grid; flex: 1; gap: 2px; min-width: 0; }
+/* As linhas longas terminam em reticências, para a lista manter a mesma altura. */
+.item-conversa-texto strong, .item-conversa-texto small { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.item-conversa-texto small { color: var(--muted); font-size: 13px; }
+.painel-conversa .conversa { margin-top: 8px; }
+.escolha-conversa { display: none; }
+
+/* No celular, a conversa aberta ocupa a tela e a lista volta pelo botão. */
+@media (max-width: 999px) {
+  .area-mensagens.com-conversa .lista-conversas { display: none; }
+}
+
+/* No computador, lista e conversa ficam lado a lado, como num aplicativo de mensagens. */
+@media (min-width: 1000px) {
+  .area-mensagens { grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); align-items: start; }
+  .voltar-conversas { display: none; }
+  .escolha-conversa { display: block; }
+  .painel-conversa .conversa { margin-top: 0; }
+  .painel-conversa .conversa-mensagens { max-height: 460px; }
+}
+
+/* Aviso flutuante de mensagem nova, no canto da tela. */
+.aviso-mensagem {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 50;
+  display: flex;
+  width: min(360px, calc(100vw - 32px));
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  background: var(--preto-carvao);
+  box-shadow: var(--sombra);
+  animation: aviso-mensagem-entra .25s ease-out;
+}
+.aviso-mensagem-corpo {
+  display: grid;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 0;
+  border-left: 4px solid var(--vinho-2);
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.aviso-mensagem-corpo span { overflow: hidden; color: var(--vinho-3); font-size: 14px; white-space: nowrap; text-overflow: ellipsis; }
+.aviso-mensagem-fechar { padding: 0 14px; border: 0; color: inherit; background: transparent; font-size: 20px; cursor: pointer; }
+
+@keyframes aviso-mensagem-entra {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aviso-mensagem { animation: none; }
+}

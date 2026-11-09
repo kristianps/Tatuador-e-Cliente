@@ -30,7 +30,7 @@ function juntarMensagens(atuais, novas) {
 }
 
 // Conversa de um pedido entre a cliente e o tatuador, usada em Minhas tatuagens e na Ficha.
-function Conversa({ tatuagemId, usuario }) {
+function Conversa({ tatuagemId, usuario, titulo, aoLer }) {
   const [mensagens, definirMensagens] = useState([]);
   const [texto, definirTexto] = useState("");
   const [estado, definirEstado] = useState("carregando");
@@ -38,7 +38,34 @@ function Conversa({ tatuagemId, usuario }) {
   const [enviando, definirEnviando] = useState(false);
   // useRef guarda um valor que sobrevive entre renderizações sem redesenhar a tela.
   const ultimoIdRef = useRef(0);
+  // Até qual mensagem já avisamos a API que foi lida, para não repetir o aviso sem necessidade.
+  const lidaAteRef = useRef(0);
+  const aoLerRef = useRef(aoLer);
+  aoLerRef.current = aoLer;
   const listaRef = useRef(null);
+
+  // Conta para a API que a pessoa viu a conversa até a última mensagem na tela.
+  // Só marca com a aba visível: mensagem que chegou com a aba escondida continua como não lida.
+  function marcarComoLidas() {
+    const ateId = ultimoIdRef.current;
+    if (document.hidden || ateId <= lidaAteRef.current) return;
+    lidaAteRef.current = ateId;
+
+    fetch(`${enderecoApi}/tatuagens/${tatuagemId}/mensagens/lidas`, {
+      method: "POST",
+      headers: cabecalhosComToken({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ ate_id: ateId }),
+    })
+      .then((resposta) => {
+        if (!resposta.ok) throw new Error("Falha ao marcar como lida.");
+        // Atualiza na hora os contadores das abas, sem esperar a próxima consulta.
+        if (aoLerRef.current) aoLerRef.current();
+      })
+      // Se falhar, tenta de novo na próxima consulta.
+      .catch(() => {
+        lidaAteRef.current = 0;
+      });
+  }
 
   // Guarda as novas mensagens e lembra o maior id, para a próxima consulta pedir só o que vier depois.
   function receberMensagens(novas) {
@@ -52,6 +79,7 @@ function Conversa({ tatuagemId, usuario }) {
     let ativo = true;
     let consultando = false;
     ultimoIdRef.current = 0;
+    lidaAteRef.current = 0;
     definirMensagens([]);
     definirEstado("carregando");
     definirErro("");
@@ -73,6 +101,7 @@ function Conversa({ tatuagemId, usuario }) {
           receberMensagens(novas);
           definirEstado("pronto");
           definirErro("");
+          marcarComoLidas();
         })
         .catch((erroBusca) => {
           if (!ativo) return;
@@ -136,7 +165,7 @@ function Conversa({ tatuagemId, usuario }) {
   return (
     <section className="conversa" aria-label="Conversa sobre o pedido">
       <div className="conversa-cabecalho">
-        <h2>Conversa</h2>
+        <h2>{titulo || "Conversa"}</h2>
         <p>{usuario.perfil === "cliente" ? "Fale com o estúdio sobre este pedido." : "Fale com a cliente sobre este pedido."}</p>
       </div>
 

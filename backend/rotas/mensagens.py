@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from esquemas.mensagem import MensagemEntrada, MensagemSaida
+from esquemas.mensagem import LeituraEntrada, MensagemEntrada, MensagemSaida, NaoLidaSaida
 from servicos import mensagem as servico_mensagem
 from servicos import usuario as servico_usuario
 
@@ -57,3 +57,28 @@ def enviar_mensagem(
         )
 
     return mensagem
+
+
+# Lista as conversas com mensagens não lidas de quem está logado.
+# A tela consulta esta rota de tempos em tempos para atualizar os contadores e avisar sobre mensagem nova.
+@router.get("/mensagens/nao-lidas", response_model=List[NaoLidaSaida])
+def listar_nao_lidas(
+    usuario: dict = Depends(servico_usuario.requerer_perfil(GRUPOS_PERMITIDOS)),
+):
+    return servico_mensagem.listar_nao_lidas(usuario)
+
+
+# Marca a conversa do pedido como lida até a mensagem informada.
+# Responde 204 (sem conteúdo), porque a tela só precisa saber que deu certo.
+@router.post("/tatuagens/{tatuagem_id}/mensagens/lidas", status_code=status.HTTP_204_NO_CONTENT)
+def marcar_como_lidas(
+    tatuagem_id: int,
+    dados: LeituraEntrada,
+    usuario: dict = Depends(servico_usuario.requerer_perfil(GRUPOS_PERMITIDOS)),
+):
+    if servico_mensagem.marcar_como_lidas(tatuagem_id, usuario, dados.ate_id) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tatuagem não encontrada.",
+        )
+    return None

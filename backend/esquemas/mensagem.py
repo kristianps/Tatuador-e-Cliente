@@ -17,3 +17,18 @@ class MensagemSaida(BaseModel):
     autor_perfil: str
     texto: str
     criada_em: datetime
+
+
+# Conversa com mensagens não lidas: quantas são e qual foi a última, para mostrar no aviso.
+class NaoLidaSaida(BaseModel):
+    tatuagem_id: int
+    ideia: str
+    nao_lidas: int
+    ultima_id: int
+    ultimo_texto: str
+    ultimo_autor: str
+
+
+# Até qual mensagem a pessoa leu; ge=0 recusa número negativo.
+class LeituraEntrada(BaseModel):
+    ate_id: int = Field(ge=0)
