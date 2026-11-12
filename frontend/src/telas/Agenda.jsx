@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { enderecoApi } from "../api.js";
 
 // Os valores de etapa correspondem aos que a API já utiliza.
-const etapas = ["pedida", "desenho aprovado", "em sessões", "finalizada"];
+const etapas = ["pedida", "desenho aprovado", "em sessões", "finalizada", "retoque feito"];
 
 function nomeEtapa(etapa) {
   const nomes = {
@@ -12,8 +12,10 @@ function nomeEtapa(etapa) {
     "em sessões": "Em sessões",
     sessão: "Em sessões",
     "pedido recebido": "Pedido recebido",
-    retoque: "Tatuagem finalizada",
+    finalização: "Finalizada",
     finalizada: "Finalizada",
+    retoque: "Retoque",
+    "retoque feito": "Retoque feito",
   };
   return nomes[etapa] || etapa;
 }
@@ -118,7 +120,11 @@ function Agenda({ aoAbrirFicha }) {
               <div className="dados-agenda">
                 <p className="identificador">PEDIDO Nº {tatuagem.id}</p>
                 <h3 title={tatuagem.ideia}>{tatuagem.ideia}</h3>
-                <p className="local-agenda">Local: <strong>{tatuagem.local_corpo}</strong></p>
+                <p className="local-agenda">
+                  Local: <strong>{tatuagem.local_corpo}</strong>
+                  {/* O tamanho ajuda o tatuador a estimar o tempo de sessão; pedidos antigos não têm. */}
+                  {tatuagem.tamanho_cm ? <> · Tamanho: <strong>{tatuagem.tamanho_cm} cm</strong></> : null}
+                </p>
                 <span className="etapa">{nomeEtapa(tatuagem.etapa)}</span>
               </div>
               <div className="acoes-agenda">

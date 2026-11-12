@@ -838,7 +838,7 @@ h2 { margin: 0; font-size: 19px; }
 .formulario-andamento .seletor-etapa { grid-column: 1 / -1; min-width: 0; margin: 0; padding: 0; border: 0; }
 .seletor-etapa legend { font-family: Georgia, "Times New Roman", serif; font-size: 22px; font-weight: 700; }
 .seletor-etapa > p { margin: 6px 0 15px; color: var(--muted); font-size: 13px; }
-.opcoes-etapa { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.opcoes-etapa { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
 .opcao-etapa {
   display: grid;
   min-height: 132px;
@@ -1478,3 +1478,26 @@ h2 { margin: 0; font-size: 19px; }
 @media (prefers-reduced-motion: reduce) {
   .aviso-mensagem { animation: none; }
 }
+
+/* Etapa ainda não liberada, como o retoque antes da finalização: fica apagada e não reage ao mouse. */
+.opcao-etapa:disabled { opacity: 0.5; cursor: not-allowed; border-style: dashed; }
+.opcao-etapa:disabled:hover { transform: none; border-color: var(--borda); }
+
+/* Em telas estreitas, os cinco cartões de etapa quebram em linhas em vez de ficarem espremidos. */
+@media (max-width: 999px) {
+  .opcoes-etapa { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+}
+
+/* Campo de tamanho: o "cm" fica dentro da caixa, à direita, para deixar clara a unidade. */
+.entrada-com-unidade { position: relative; display: block; }
+.formulario .entrada-com-unidade input { padding-right: 48px; }
+.entrada-com-unidade > span {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  color: var(--muted);
+  font-weight: 700;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.campo-tamanho .ajuda-campo { font-weight: 400; }

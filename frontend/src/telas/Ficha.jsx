@@ -3,13 +3,17 @@ import { useEffect, useState } from "react";
 import { enderecoApi } from "../api.js";
 
 // Mantém os valores que a API espera e apresenta nomes corrigidos na tela.
-const etapas = ["pedida", "desenho aprovado", "em sessões", "finalizada"];
+const etapas = ["pedida", "desenho aprovado", "em sessões", "finalizada", "retoque feito"];
 const opcoesEtapa = [
   { etapa: "pedida", tipo: "pedido recebido", nome: "Pedido recebido", detalhe: "Pedido na agenda" },
   { etapa: "desenho aprovado", tipo: "desenho aprovado", nome: "Desenho aprovado", detalhe: "Arte validada" },
   { etapa: "em sessões", tipo: "sessão", nome: "Em sessões", detalhe: "Trabalho em andamento" },
-  { etapa: "finalizada", tipo: "retoque", nome: "Finalizada", detalhe: "Trabalho concluído" },
+  { etapa: "finalizada", tipo: "finalização", nome: "Finalizada", detalhe: "Sessões concluídas" },
+  { etapa: "retoque feito", tipo: "retoque", nome: "Retoque", detalhe: "Após a cicatrização" },
 ];
+
+// Etapas em que o retoque já pode ser registrado: a tatuagem precisa estar finalizada.
+const etapasQueLiberamRetoque = ["finalizada", "retoque feito"];
 
 function nomeEtapa(etapa) {
   const nomes = {
@@ -17,8 +21,10 @@ function nomeEtapa(etapa) {
     "desenho aprovado": "Desenho aprovado",
     "em sessões": "Em sessões",
     sessão: "Em sessões",
-    retoque: "Tatuagem finalizada",
+    finalização: "Finalizada",
     finalizada: "Finalizada",
+    retoque: "Retoque",
+    "retoque feito": "Retoque feito",
   };
   return nomes[etapa] || etapa;
 }
@@ -170,6 +176,7 @@ function Ficha({ tatuagemId, aoVoltar, aoAbrirConversa }) {
           <div className="resumo-ficha resumo-ficha-detalhado">
             <div><span>IDEIA</span><h2>{tatuagem.ideia}</h2></div>
             <div><span>LOCAL</span><strong>{tatuagem.local_corpo}</strong></div>
+            <div><span>TAMANHO</span><strong>{tatuagem.tamanho_cm ? `${tatuagem.tamanho_cm} cm` : "Não informado"}</strong></div>
           </div>
 
           <form className="formulario formulario-andamento" onSubmit={atualizarAndamento}>
@@ -177,19 +184,25 @@ function Ficha({ tatuagemId, aoVoltar, aoAbrirConversa }) {
               <legend>Etapa atual</legend>
               <p>Escolha em qual etapa este pedido está.</p>
               <div className="opcoes-etapa">
-                {opcoesEtapa.map((opcao, indice) => (
-                  <button
-                    className={etapaSelecionada === opcao.etapa ? "opcao-etapa selecionada" : "opcao-etapa"}
-                    type="button"
-                    key={opcao.etapa}
-                    aria-pressed={etapaSelecionada === opcao.etapa}
-                    onClick={() => definirEtapaSelecionada(opcao.etapa)}
-                  >
-                    <span className="numero-etapa">0{indice + 1}</span>
-                    <strong>{opcao.nome}</strong>
-                    <small>{opcao.detalhe}</small>
-                  </button>
-                ))}
+                {opcoesEtapa.map((opcao, indice) => {
+                  // O cartão de retoque fica bloqueado até a tatuagem ser finalizada, a mesma regra que a API confere.
+                  const bloqueada = opcao.tipo === "retoque" && !etapasQueLiberamRetoque.includes(tatuagem.etapa);
+                  return (
+                    <button
+                      className={etapaSelecionada === opcao.etapa ? "opcao-etapa selecionada" : "opcao-etapa"}
+                      type="button"
+                      key={opcao.etapa}
+                      aria-pressed={etapaSelecionada === opcao.etapa}
+                      disabled={bloqueada}
+                      title={bloqueada ? "Disponível depois que a tatuagem for finalizada" : undefined}
+                      onClick={() => definirEtapaSelecionada(opcao.etapa)}
+                    >
+                      <span className="numero-etapa">0{indice + 1}</span>
+                      <strong>{opcao.nome}</strong>
+                      <small>{bloqueada ? "Depois de finalizar" : opcao.detalhe}</small>
+                    </button>
+                  );
+                })}
               </div>
             </fieldset>
             <button

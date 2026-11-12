@@ -25,11 +25,13 @@ function PedirTatuagem({ perfil, figuras }) {
   const [figuraSelecionada, definirFiguraSelecionada] = useState("");
   const [ideiaLivre, definirIdeiaLivre] = useState("");
   const [localCorpo, definirLocalCorpo] = useState("");
+  // Guardado como texto porque é o que o campo devolve; vira número só no envio.
+  const [tamanhoCm, definirTamanhoCm] = useState("");
   const [estado, definirEstado] = useState("pronto");
   const [mensagem, definirMensagem] = useState("");
   const [mostrarIdeiaLivre, definirMostrarIdeiaLivre] = useState(false);
-  // Atualiza o passo em destaque conforme a cliente escolhe uma referência e região do corpo.
-  const passoAtual = localCorpo
+  // Atualiza o passo em destaque conforme a cliente escolhe uma referência, a região do corpo e o tamanho.
+  const passoAtual = localCorpo && tamanhoCm
     ? 3
     : figuraSelecionada || ideiaLivre.trim()
       ? 2
@@ -76,6 +78,7 @@ function PedirTatuagem({ perfil, figuras }) {
         cliente_id: Number(perfil.id),
         ideia: partesDaIdeia.join(". "),
         local_corpo: localCorpo,
+        tamanho_cm: Number(tamanhoCm),
       }),
     })
       .then((resposta) => {
@@ -91,6 +94,7 @@ function PedirTatuagem({ perfil, figuras }) {
         definirFiguraSelecionada("");
         definirIdeiaLivre("");
         definirLocalCorpo("");
+        definirTamanhoCm("");
       })
       .catch((erro) => {
         definirEstado("erro");
@@ -108,7 +112,7 @@ function PedirTatuagem({ perfil, figuras }) {
             Escolha uma referência visual ou conte ao estúdio o que você imagina.
           </p>
           <ol className="passos-pedido" aria-label="Etapas para pedir uma tatuagem">
-            {["Inspire-se", "Escolha o local", "Envie seu pedido"].map((passo, indice) => (
+            {["Inspire-se", "Local e tamanho", "Envie seu pedido"].map((passo, indice) => (
               <li className={passoAtual === indice + 1 ? "passo-pedido atual" : passoAtual > indice + 1 ? "passo-pedido concluido" : "passo-pedido"} key={passo}>
                 <span>{String(indice + 1).padStart(2, "0")}</span>
                 {passo}
@@ -172,19 +176,42 @@ function PedirTatuagem({ perfil, figuras }) {
           )}
         </section>
 
-        <label className="campo-local-corpo">
-          Onde deseja tatuar?
-          <select
-            value={localCorpo}
-            onChange={(evento) => definirLocalCorpo(evento.target.value)}
-            required
-          >
-            <option value="" disabled>Selecione uma região do corpo</option>
-            {locaisDisponiveis.map((local) => (
-              <option key={local} value={local}>{local}</option>
-            ))}
-          </select>
-        </label>
+        {/* Local e tamanho lado a lado no computador; no celular, um embaixo do outro. */}
+        <div className="linha-campos">
+          <label className="campo-local-corpo">
+            Onde deseja tatuar?
+            <select
+              value={localCorpo}
+              onChange={(evento) => definirLocalCorpo(evento.target.value)}
+              required
+            >
+              <option value="" disabled>Selecione uma região do corpo</option>
+              {locaisDisponiveis.map((local) => (
+                <option key={local} value={local}>{local}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="campo-local-corpo campo-tamanho">
+            Qual o tamanho, em centímetros?
+            {/* inputMode="numeric" abre o teclado de números no celular; min e max seguem o limite da API. */}
+            <span className="entrada-com-unidade">
+              <input
+                type="number"
+                inputMode="numeric"
+                min="1"
+                max="100"
+                step="1"
+                placeholder="Ex.: 10"
+                value={tamanhoCm}
+                onChange={(evento) => definirTamanhoCm(evento.target.value)}
+                required
+              />
+              <span aria-hidden="true">cm</span>
+            </span>
+            <span className="ajuda-campo">Medida aproximada do lado maior do desenho.</span>
+          </label>
+        </div>
 
         <button className="botao-principal" type="submit" disabled={estado === "carregando"}>
           {estado === "carregando" ? "Enviando pedido…" : "Enviar pedido"}

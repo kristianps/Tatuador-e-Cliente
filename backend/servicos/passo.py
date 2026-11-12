@@ -35,16 +35,23 @@ def registrar_passo(
         return None, None, None
 
     tipo = dados["tipo"]
+    # Cada tipo de passo leva a tatuagem para uma etapa.
+    # A finalização encerra as sessões; o retoque vem depois, quando a pele já cicatrizou.
     etapas_por_tipo = {
         "pedido recebido": "pedida",
         "desenho aprovado": "desenho aprovado",
         "sessão": "em sessões",
-        "retoque": "finalizada",
+        "finalização": "finalizada",
+        "retoque": "retoque feito",
     }
 
-    # Aceita somente as quatro etapas que o tatuador pode selecionar.
+    # Aceita somente as cinco etapas que o tatuador pode selecionar.
     if tipo not in etapas_por_tipo:
         return None, tatuagem, "Escolha uma etapa válida para este pedido."
+
+    # O retoque só existe para tatuagem já finalizada: antes disso, ainda é sessão.
+    if tipo == "retoque" and tatuagem["etapa"] not in ("finalizada", "retoque feito"):
+        return None, tatuagem, "O retoque só pode ser registrado depois que a tatuagem estiver finalizada."
 
     # Cada registro atualiza individualmente a etapa selecionada pelo tatuador.
 

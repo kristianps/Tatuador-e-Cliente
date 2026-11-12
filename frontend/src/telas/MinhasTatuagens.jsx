@@ -172,7 +172,8 @@ function MinhasTatuagens({ perfil, aoAbrirConversa }) {
               <li className="cartao-tatuagem" key={tatuagem.id}>
                 <div>
                   <h2 title={tatuagem.ideia}>{tatuagem.ideia}</h2>
-                  <p>{tatuagem.local_corpo}</p>
+                  {/* Pedidos antigos não têm tamanho; nesses, aparece só o local. */}
+                  <p>{tatuagem.local_corpo}{tatuagem.tamanho_cm ? ` · ${tatuagem.tamanho_cm} cm` : ""}</p>
                   <span className="etapa">{tatuagem.etapa}</span>
                 </div>
                 <button className="botao-secundario" onClick={() => abrirHistorico(tatuagem)}>

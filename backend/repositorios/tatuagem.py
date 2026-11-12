@@ -27,6 +27,10 @@ def inicializar() -> None:
                 )
                 """
             )
+            # Acrescenta o tamanho em centímetros na tabela que já existe em produção.
+            # IF NOT EXISTS deixa o comando rodar em toda inicialização sem dar erro;
+            # a coluna aceita vazio porque os pedidos antigos foram feitos sem tamanho.
+            cursor.execute("ALTER TABLE tatuagens ADD COLUMN IF NOT EXISTS tamanho_cm INTEGER")
             banco.commit()
 
 
@@ -35,11 +39,11 @@ def criar(dados: dict) -> dict:
         with banco.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
                 """
-                INSERT INTO tatuagens (cliente_id, ideia, local_corpo, etapa)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO tatuagens (cliente_id, ideia, local_corpo, tamanho_cm, etapa)
+                VALUES (%s, %s, %s, %s, %s)
                 RETURNING *
                 """,
-                (dados["cliente_id"], dados["ideia"], dados["local_corpo"], "pedida"),
+                (dados["cliente_id"], dados["ideia"], dados["local_corpo"], dados["tamanho_cm"], "pedida"),
             )
             tatuagem = cursor.fetchone()
             banco.commit()
