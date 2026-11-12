@@ -2102,3 +2102,10 @@ a.cartao-cliente-dado { justify-self: start; color: var(--vinho); font-weight: 6
   .painel-pedido .assistente-ia .botao-principal { justify-self: start; }
   .painel-pedido .assistente-escrever .botao-principal { align-self: stretch; }
 }
+
+/* Avisos de erro dentro da assistente: o vermelho escuro some no fundo escuro, então usa um tom claro. */
+.assistente-ia .aviso.erro {
+  color: #ffd7dc;
+  border-color: rgba(255, 140, 155, 0.45);
+  background: rgba(180, 47, 61, 0.28);
+}
