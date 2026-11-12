@@ -1647,3 +1647,29 @@ a.cartao-cliente-dado { justify-self: start; color: var(--vinho); font-weight: 6
   .senha-provisoria dd + dt { margin-top: 6px; }
   .senha-provisoria dd { overflow-wrap: normal; word-break: normal; }
 }
+
+/* Campo de senha com o "olhinho": o botão fica dentro da caixa, à direita. */
+.entrada-senha { position: relative; display: block; }
+/* A folga à direita impede que o texto digitado passe por baixo do botão. */
+.entrada-senha input, .formulario .entrada-senha input { padding-right: 52px; }
+/* O Edge tem o próprio botão de mostrar senha; escondemos para não aparecerem dois olhos. */
+.entrada-senha input::-ms-reveal, .entrada-senha input::-ms-clear { display: none; }
+.botao-ver-senha {
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+.botao-ver-senha:hover, .botao-ver-senha[aria-pressed="true"] { color: var(--vinho); }
+.botao-ver-senha:focus-visible { outline: 3px solid rgba(143, 29, 44, 0.22); outline-offset: -3px; }
+.botao-ver-senha svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }

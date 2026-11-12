@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { enderecoApi } from "./api.js";
+import CampoSenha from "./componentes/CampoSenha.jsx";
 import RecuperarSenha from "./telas/RecuperarSenha.jsx";
 import Agenda from "./telas/Agenda.jsx";
 import Clientes from "./telas/Clientes.jsx";
@@ -343,7 +344,7 @@ function Aplicacao() {
                   </label>
                   <label className="campo-local-corpo">
                     Senha
-                    <input type="password" name="senha" autoComplete="current-password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required />
+                    <CampoSenha name="senha" autoComplete="current-password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required />
                   </label>
                   <button className="link-voltar link-esqueci" type="button" onClick={() => trocarAba("recuperar")}>
                     Esqueci minha senha
@@ -370,12 +371,12 @@ function Aplicacao() {
                   <div className="linha-campos">
                     <label className="campo-local-corpo">
                       Senha
-                      <input type="password" name="nova-senha" autoComplete="new-password" value={senhaCadastro} onChange={(evento) => definirSenhaCadastro(evento.target.value)} required minLength={8} maxLength={100} />
+                      <CampoSenha name="nova-senha" autoComplete="new-password" value={senhaCadastro} onChange={(evento) => definirSenhaCadastro(evento.target.value)} required minLength={8} maxLength={100} />
                       <small className="dica-campo">Use pelo menos 8 caracteres.</small>
                     </label>
                     <label className="campo-local-corpo">
                       Confirmar senha
-                      <input type="password" name="confirmar-senha" autoComplete="new-password" value={confirmacaoSenha} onChange={(evento) => definirConfirmacaoSenha(evento.target.value)} required minLength={8} maxLength={100} />
+                      <CampoSenha name="confirmar-senha" autoComplete="new-password" value={confirmacaoSenha} onChange={(evento) => definirConfirmacaoSenha(evento.target.value)} required minLength={8} maxLength={100} />
                     </label>
                   </div>
                   <button className="botao-principal" type="submit" disabled={estadoCadastro === "carregando"}>

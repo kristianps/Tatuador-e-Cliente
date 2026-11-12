@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { enderecoApi } from "../api.js";
+import CampoSenha from "../componentes/CampoSenha.jsx";
 
 // Mostra o pedido do link por e-mail ou, quando a pessoa chega pelo link, a criação da nova senha.
 function RecuperarSenha({ token, aoVoltar, aoRedefinir }) {
@@ -83,12 +84,12 @@ function RecuperarSenha({ token, aoVoltar, aoRedefinir }) {
             <div className="linha-campos">
               <label className="campo-local-corpo">
                 Nova senha
-                <input type="password" name="nova-senha" autoComplete="new-password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required minLength={8} maxLength={100} />
+                <CampoSenha name="nova-senha" autoComplete="new-password" value={senha} onChange={(evento) => definirSenha(evento.target.value)} required minLength={8} maxLength={100} />
                 <small className="dica-campo">Use pelo menos 8 caracteres.</small>
               </label>
               <label className="campo-local-corpo">
                 Confirmar senha
-                <input type="password" name="confirmar-senha" autoComplete="new-password" value={confirmacaoSenha} onChange={(evento) => definirConfirmacaoSenha(evento.target.value)} required minLength={8} maxLength={100} />
+                <CampoSenha name="confirmar-senha" autoComplete="new-password" value={confirmacaoSenha} onChange={(evento) => definirConfirmacaoSenha(evento.target.value)} required minLength={8} maxLength={100} />
               </label>
             </div>
             <button className="botao-principal" type="submit" disabled={estado === "carregando"}>
