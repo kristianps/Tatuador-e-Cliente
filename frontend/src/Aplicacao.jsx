@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { enderecoApi } from "./api.js";
 import CampoSenha from "./componentes/CampoSenha.jsx";
+import VitrineEntrada from "./componentes/VitrineEntrada.jsx";
 import RecuperarSenha from "./telas/RecuperarSenha.jsx";
 import Agenda from "./telas/Agenda.jsx";
 import Clientes from "./telas/Clientes.jsx";
@@ -301,15 +302,21 @@ function Aplicacao() {
   function mostrarTela() {
     if (!usuario && (tokenRecuperacao || abaAtiva === "recuperar")) {
       return (
-        <section className="painel painel-auth">
-          <RecuperarSenha token={tokenRecuperacao} aoVoltar={fecharRecuperacao} aoRedefinir={concluirRecuperacao} />
+        <section className="painel painel-auth tela-entrada">
+          <VitrineEntrada />
+          <div className="coluna-acesso">
+            <RecuperarSenha token={tokenRecuperacao} aoVoltar={fecharRecuperacao} aoRedefinir={concluirRecuperacao} />
+          </div>
         </section>
       );
     }
 
     if (!usuario) {
       return (
-        <section className="painel painel-auth">
+        // A tela de entrada tem a vitrine do estúdio e, ao lado (ou acima, no celular), o acesso.
+        <section className="painel painel-auth tela-entrada">
+          <VitrineEntrada />
+          <div className="coluna-acesso">
           <div className="auth-card">
             <div className="abas-login" role="tablist" aria-label="Acesso ao sistema">
               <button
@@ -392,7 +399,7 @@ function Aplicacao() {
             {erroCadastro && <p className="aviso erro" role="alert">{erroCadastro}</p>}
             {mensagemCadastro && <p className="aviso sucesso" role="status">{mensagemCadastro}</p>}
           </div>
-
+          </div>
         </section>
       );
     }

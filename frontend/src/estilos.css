@@ -1673,3 +1673,253 @@ a.cartao-cliente-dado { justify-self: start; color: var(--vinho); font-weight: 6
 .botao-ver-senha:hover, .botao-ver-senha[aria-pressed="true"] { color: var(--vinho); }
 .botao-ver-senha:focus-visible { outline: 3px solid rgba(143, 29, 44, 0.22); outline-offset: -3px; }
 .botao-ver-senha svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ======================================================================
+   Tela de entrada: vitrine do estúdio ao lado do acesso
+   ====================================================================== */
+
+/* Texto lido só por leitores de tela, escondido da vista. */
+.somente-leitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.tela-entrada { display: grid; gap: 16px; padding: 0; border: 0; background: none; box-shadow: none; }
+.coluna-acesso { display: grid; gap: 12px; align-content: center; }
+
+/* Fundo escuro com brilho vinho e uma grade fina, para o ar "digital". isolation cria uma camada própria,
+   assim os enfeites com z-index -1 ficam atrás do texto mas dentro da vitrine. */
+.vitrine-entrada {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  align-content: space-between;
+  gap: 20px;
+  min-height: 300px;
+  overflow: hidden;
+  padding: 22px 20px 0;
+  border-radius: 22px;
+  color: #f7f2ee;
+  background:
+    radial-gradient(circle at 85% 15%, rgba(180, 47, 61, 0.45), transparent 45%),
+    radial-gradient(circle at 10% 95%, rgba(143, 29, 44, 0.35), transparent 40%),
+    linear-gradient(160deg, #1f1b1d, #141314 60%, #2b1a1d);
+  box-shadow: var(--sombra);
+}
+.vitrine-entrada::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 28px 28px;
+  -webkit-mask-image: radial-gradient(circle at 75% 30%, #000, transparent 75%);
+  mask-image: radial-gradient(circle at 75% 30%, #000, transparent 75%);
+}
+
+/* A rosa é desenhada traço a traço. stroke-dashoffset de 1 esconde o traço; ao ir para 0, ele aparece
+   como se a agulha estivesse riscando. Cada traço começa depois do anterior (--atraso). */
+.rosa-animada {
+  position: absolute;
+  top: 8px;
+  right: -6px;
+  z-index: -1;
+  width: 140px;
+  height: auto;
+  opacity: 0.55;
+  fill: none;
+  stroke: #e8b4bb;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 6px rgba(232, 180, 187, 0.45));
+}
+.rosa-animada path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: tracar-rosa 9s ease-in-out infinite;
+  animation-delay: var(--atraso);
+}
+@keyframes tracar-rosa {
+  0% { stroke-dashoffset: 1; opacity: 1; }
+  30% { stroke-dashoffset: 0; opacity: 1; }
+  80% { stroke-dashoffset: 0; opacity: 1; }
+  92% { stroke-dashoffset: 0; opacity: 0; }
+  100% { stroke-dashoffset: 1; opacity: 0; }
+}
+
+/* Gotas de tinta que sobem e descem devagar. */
+.gota-tinta {
+  position: absolute;
+  z-index: -1;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--vinho-2);
+  animation: flutuar-gota 7s ease-in-out infinite;
+}
+.gota-1 { top: 24%; left: 56%; }
+.gota-2 { top: 60%; left: 78%; width: 5px; height: 5px; animation-delay: -2.4s; }
+.gota-3 { top: 9%; left: 38%; width: 4px; height: 4px; animation-delay: -4.6s; }
+@keyframes flutuar-gota {
+  0%, 100% { opacity: 0.25; transform: translateY(0); }
+  50% { opacity: 0.8; transform: translateY(-14px); }
+}
+
+.vitrine-texto { display: grid; gap: 12px; }
+.vitrine-sobretitulo {
+  margin: 0;
+  color: var(--vinho-3);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+/* A altura mínima reserva espaço para a frase mais longa, então nada pula quando a frase troca. */
+.vitrine-titulo {
+  min-height: 3.5em;
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.frase-rotativa { display: block; animation: entrar-frase 0.6s ease-out both; }
+/* O cursor piscando no fim da frase dá o toque de tela digital. */
+.frase-rotativa::after {
+  display: inline-block;
+  width: 0.08em;
+  height: 0.85em;
+  margin-left: 0.12em;
+  content: "";
+  vertical-align: -0.06em;
+  background: var(--vinho-3);
+  animation: piscar-cursor 1s steps(1) infinite;
+}
+@keyframes entrar-frase {
+  from { opacity: 0; filter: blur(4px); transform: translateY(10px); }
+  to { opacity: 1; filter: none; transform: none; }
+}
+@keyframes piscar-cursor { 50% { opacity: 0; } }
+
+.vitrine-apoio { max-width: 42ch; margin: 0; color: #d5c9c2; font-size: 14px; line-height: 1.5; }
+
+.vitrine-beneficios { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.vitrine-beneficios li {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid rgba(232, 180, 187, 0.3);
+  border-radius: 999px;
+  color: #f7f2ee;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 12px;
+  font-weight: 600;
+  animation: surgir-beneficio 0.6s ease-out both;
+  animation-delay: var(--atraso);
+}
+.vitrine-beneficios svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--vinho-3);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+@keyframes surgir-beneficio {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Esteira de fotos: as bordas somem num degradê e a faixa corre sem parar.
+   Como a lista está duplicada, andar metade da largura emenda o fim com o começo. */
+.esteira-fotos {
+  margin: 0 -20px;
+  padding: 4px 0 18px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+}
+.esteira-trilho {
+  display: flex;
+  gap: 10px;
+  width: max-content;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  animation: rolar-esteira 32s linear infinite;
+}
+.esteira-fotos:hover .esteira-trilho { animation-play-state: paused; }
+.esteira-trilho li {
+  flex: none;
+  width: 84px;
+  height: 96px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+  transform: rotate(-2deg);
+}
+.esteira-trilho li:nth-child(even) { transform: rotate(2deg); }
+.esteira-trilho img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* -50% anda o tamanho de uma lista; os 5 px a mais são metade do espaço entre as fotos. */
+@keyframes rolar-esteira { to { transform: translateX(calc(-50% - 5px)); } }
+
+/* Computador: vitrine grande à esquerda, acesso à direita, ocupando a altura da tela. */
+@media (min-width: 1000px) {
+  .tela-entrada {
+    grid-template-columns: minmax(0, 1.25fr) minmax(380px, 480px);
+    gap: 28px;
+    align-items: stretch;
+    align-self: stretch;
+  }
+  .vitrine-entrada { min-height: min(640px, calc(100dvh - 150px)); padding: 44px 44px 0; }
+  .rosa-animada { top: 36px; right: 36px; width: 290px; opacity: 0.9; }
+  .vitrine-titulo { max-width: 15ch; min-height: 2.3em; font-size: clamp(38px, 3.4vw, 54px); }
+  .vitrine-apoio { font-size: 16px; }
+  .vitrine-beneficios li { padding: 8px 14px; font-size: 13px; }
+  .esteira-fotos { margin: 0 -44px; padding-bottom: 32px; }
+  .esteira-trilho li { width: 132px; height: 150px; }
+}
+
+/* Celular: a vitrine fica compacta em cima, para o formulário aparecer logo abaixo. */
+@media (max-width: 999px) {
+  .vitrine-texto { padding-right: 70px; }
+  .vitrine-apoio { display: none; }
+}
+
+/* Quem pediu ao aparelho menos movimento vê tudo parado e completo. */
+@media (prefers-reduced-motion: reduce) {
+  .rosa-animada path { stroke-dashoffset: 0; animation: none; }
+  .gota-tinta, .frase-rotativa, .vitrine-beneficios li, .esteira-trilho { animation: none; }
+  .frase-rotativa::after { display: none; }
+  .esteira-fotos { overflow-x: auto; }
+}
+
+/* Ajustes da vitrine depois de conferir as telas. */
+@media (min-width: 1000px) {
+  /* O texto fica na parte esquerda e a rosa no espaço livre à direita, sem encostar no título nem nos selos. */
+  .vitrine-texto { max-width: 58%; }
+  .rosa-animada { top: 50%; right: 5%; width: min(32%, 300px); transform: translateY(-62%); }
+}
+
+@media (max-width: 999px) {
+  /* Vitrine compacta no celular: o formulário precisa aparecer logo na primeira tela. */
+  .vitrine-entrada { min-height: 0; gap: 14px; padding-top: 18px; }
+  .vitrine-texto { gap: 8px; padding-right: 0; }
+  .rosa-animada { top: 4px; right: -14px; width: 120px; opacity: 0.35; }
+  /* Três linhas reservadas: a frase mais longa cabe sem empurrar o formulário quando troca. */
+  .vitrine-titulo { min-height: 3.45em; font-size: clamp(22px, 6.2vw, 26px); }
+  .vitrine-beneficios { display: none; }
+  .esteira-fotos { padding-bottom: 14px; }
+  .esteira-trilho li { width: 68px; height: 78px; border-radius: 10px; }
+}
