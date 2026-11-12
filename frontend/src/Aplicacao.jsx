@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { enderecoApi } from "./api.js";
 import RecuperarSenha from "./telas/RecuperarSenha.jsx";
 import Agenda from "./telas/Agenda.jsx";
+import Clientes from "./telas/Clientes.jsx";
 import Ficha from "./telas/Ficha.jsx";
 import Mensagens from "./telas/Mensagens.jsx";
 import MinhasTatuagens from "./telas/MinhasTatuagens.jsx";
@@ -415,6 +416,11 @@ function Aplicacao() {
       return <MinhasTatuagens perfil={usuario} enderecoApi={enderecoApi} aoAbrirConversa={abrirConversa} />;
     }
 
+    // A aba Clientes é só do tatuador; a cliente nunca chega nela pelo menu.
+    if (telaAtual === "clientes" && usuario.perfil === "tatuador") {
+      return <Clientes />;
+    }
+
     if (telaAtual === "ficha") {
       return <Ficha tatuagemId={tatuagemId} enderecoApi={enderecoApi} aoVoltar={voltarParaAgenda} aoAbrirConversa={abrirConversa} />;
     }
@@ -454,6 +460,7 @@ function Aplicacao() {
             <>
               <button className={telaAtual === "agenda" ? "aba ativa" : "aba"} onClick={() => definirTelaAtual("agenda")}>A agenda</button>
               <button className={telaAtual === "ficha" ? "aba ativa" : "aba"} onClick={() => definirTelaAtual("ficha")}>A ficha</button>
+              <button className={telaAtual === "clientes" ? "aba ativa" : "aba"} onClick={() => definirTelaAtual("clientes")}>Clientes</button>
             </>
           )}
           {/* A aba de mensagens é igual para os dois perfis e mostra quantas não lidas existem. */}

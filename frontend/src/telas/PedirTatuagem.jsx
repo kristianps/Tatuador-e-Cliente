@@ -129,7 +129,7 @@ function PedirTatuagem({ perfil, figuras }) {
       <form className="formulario" onSubmit={enviarPedido}>
         <fieldset className="campo-figuras">
           <legend>Referências de tatuagens</legend>
-          <p className="ajuda-campo">Selecione apenas uma imagem que combinem com sua ideia.</p>
+          <p className="ajuda-campo">Selecione uma imagem que combine com sua ideia.</p>
           <div className="grade-figuras">
             {figuras.map((figura) => (
               <button

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { enderecoApi } from "../api.js";
 
@@ -15,6 +15,15 @@ function MinhasTatuagens({ perfil, aoAbrirConversa }) {
   const [estadoHistorico, definirEstadoHistorico] = useState("pronto");
   const [erroHistorico, definirErroHistorico] = useState("");
   const [celebracao, definirCelebracao] = useState(null);
+  const historicoRef = useRef(null);
+
+  // No celular o histórico abre embaixo da lista; rola até ele para a cliente ver que abriu.
+  // No computador ele já fica ao lado da lista, então a página não se mexe.
+  const idAberto = tatuagemAberta ? tatuagemAberta.id : null;
+  useEffect(() => {
+    if (idAberto === null || !window.matchMedia("(max-width: 999px)").matches) return;
+    historicoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [idAberto]);
 
   // Atualiza a lista periodicamente e celebra cada pedido finalizado uma única vez.
   useEffect(() => {
@@ -185,7 +194,7 @@ function MinhasTatuagens({ perfil, aoAbrirConversa }) {
         )}
 
         {tatuagemAberta && (
-          <section className="historico">
+          <section className="historico" ref={historicoRef}>
             <div className="titulo-historico">
               <div>
                 <p className="sobretitulo">HISTÓRICO</p>

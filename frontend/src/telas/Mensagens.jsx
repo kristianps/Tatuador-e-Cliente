@@ -51,6 +51,16 @@ function Mensagens({ usuario, pendentes, conversaId, aoSelecionar, aoLer }) {
     pedirPermissaoNotificacao().then(definirPermissao);
   }
 
+  // pointer: coarse indica tela de toque (celular ou tablet). Nesses aparelhos o aviso do navegador
+  // precisa de recursos de aplicativo instalado, então o convite só aparece no computador.
+  const ehToque = window.matchMedia("(pointer: coarse)").matches;
+
+  // No celular, a conversa ocupa a tela; ao abrir uma, volta ao topo para ela aparecer inteira.
+  function selecionarConversa(id) {
+    aoSelecionar(id);
+    if (window.matchMedia("(max-width: 999px)").matches) window.scrollTo({ top: 0 });
+  }
+
   // Map deixa achar as não lidas de cada pedido pelo id, sem percorrer a lista toda.
   const naoLidasPorPedido = new Map(pendentes.map((item) => [item.tatuagem_id, item]));
 
@@ -69,14 +79,15 @@ function Mensagens({ usuario, pendentes, conversaId, aoSelecionar, aoLer }) {
   if (estado === "erro") return <p className="aviso erro" role="alert">{erro}</p>;
 
   return (
-    <section className="painel painel-mensagens">
+    // conversa-aberta deixa o CSS esconder o título da página no celular, para sobrar espaço às mensagens.
+    <section className={selecionada ? "painel painel-mensagens conversa-aberta" : "painel painel-mensagens"}>
       <p className="sobretitulo">CONVERSAS</p>
       <h1>Mensagens</h1>
       <p className="introducao">
         {ehCliente ? "Converse com o estúdio sobre cada pedido." : "Converse com cada cliente sobre o pedido dela."}
       </p>
 
-      {permissao === "default" && (
+      {permissao === "default" && !ehToque && (
         <div className="aviso-notificacoes">
           <p>Receba um aviso no navegador quando chegar mensagem nova, mesmo em outra aba.</p>
           <button className="botao-secundario" type="button" onClick={ativarNotificacoes}>Ativar notificações</button>
@@ -98,7 +109,7 @@ function Mensagens({ usuario, pendentes, conversaId, aoSelecionar, aoLer }) {
                     type="button"
                     className={tatuagem.id === conversaId ? "item-conversa ativa" : "item-conversa"}
                     aria-current={tatuagem.id === conversaId ? "true" : undefined}
-                    onClick={() => aoSelecionar(tatuagem.id)}
+                    onClick={() => selecionarConversa(tatuagem.id)}
                   >
                     <span className="item-conversa-texto">
                       <strong>{tituloDe(tatuagem)}</strong>

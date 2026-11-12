@@ -1501,3 +1501,149 @@ h2 { margin: 0; font-size: 19px; }
   pointer-events: none;
 }
 .campo-tamanho .ajuda-campo { font-weight: 400; }
+
+/* ======================================================================
+   Uso no celular
+   As regras abaixo só valem em telas estreitas ou de toque; o computador continua igual.
+   ====================================================================== */
+
+/* O rodapé fica sempre no fim da tela, mesmo em páginas curtas.
+   dvh é a altura visível de verdade no celular, descontando a barra de endereço do navegador. */
+.aplicacao { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+.aplicacao > .conteudo { flex: 1 0 auto; }
+
+/* O cabeçalho fica grudado no topo; esta folga impede que ele cubra o histórico ao rolar até ele. */
+.historico { scroll-margin-top: 80px; }
+
+/* Em telas de toque, todo alvo tem pelo menos 44 px, a medida recomendada para o dedo. */
+@media (pointer: coarse) {
+  .link-voltar, .link-esqueci { display: inline-flex; align-items: center; min-height: 44px; }
+  .link-voltar { margin-bottom: 12px; }
+  .cabecalho .botao-secundario { min-width: 44px; min-height: 40px; }
+  .fechar-celebracao, .aviso-mensagem-fechar { min-width: 44px; min-height: 44px; }
+}
+
+@media (max-width: 999px), (pointer: coarse) {
+  /* Com letra menor que 16 px, o iPhone dá zoom sozinho ao tocar no campo; 16 px evita esse pulo. */
+  input, select, textarea, .formulario input, .formulario select, .formulario textarea { font-size: 16px; }
+}
+
+@media (max-width: 999px) {
+  /* Com uma conversa aberta, o título da página sai de cena e a conversa ganha a tela, como num aplicativo. */
+  .painel-mensagens.conversa-aberta > .sobretitulo,
+  .painel-mensagens.conversa-aberta > h1,
+  .painel-mensagens.conversa-aberta > .introducao,
+  .painel-mensagens.conversa-aberta > .aviso-notificacoes { display: none; }
+  .painel-mensagens.conversa-aberta .conversa-mensagens {
+    max-height: none;
+    height: max(260px, calc(100dvh - 380px));
+  }
+  /* Títulos longos de pedido ficam em até duas linhas, terminando em reticências. */
+  .conversa-cabecalho h2 {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 16px;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  /* Botões de ação ocupam a largura toda, mais fáceis de alcançar com o polegar. */
+  .formulario-andamento > .botao-principal,
+  .botao-abrir-conversa { width: 100%; justify-self: stretch; }
+}
+
+@media (max-width: 620px) {
+  /* Na ficha, os blocos do resumo ficam um embaixo do outro: a divisória passa de lateral para horizontal. */
+  .resumo-ficha-detalhado > div + div {
+    padding-top: 12px;
+    padding-left: 0;
+    border-top: 1px solid var(--borda);
+    border-left: 0;
+  }
+
+  /* As etapas do pedido no topo ficavam com letra de 9 px, difícil de ler. */
+  .passo-pedido { font-size: 11px; }
+
+  /* O aviso de mensagem nova ocupa a largura da tela, afastado das bordas. */
+  .aviso-mensagem { right: 10px; bottom: 10px; left: 10px; width: auto; }
+
+  .botao-principal[type="submit"] { width: 100%; justify-self: stretch; }
+  /* Exceção: na conversa o botão Enviar fica ao lado da caixa de texto, como nos aplicativos de mensagem. */
+  .conversa-formulario .botao-principal[type="submit"] { width: auto; }
+}
+
+/* Aba Clientes do tatuador: cadastro presencial e lista de clientes. */
+.area-clientes { display: grid; gap: 24px; margin-top: 8px; }
+.bloco-cadastro-presencial, .bloco-lista-clientes {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  padding: 20px;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.72);
+}
+.bloco-cadastro-presencial h2, .bloco-lista-clientes h2 { margin: 0; font-size: 20px; }
+.bloco-cadastro-presencial > .ajuda-campo { margin: -8px 0 0; }
+.bloco-cadastro-presencial .formulario { max-width: none; }
+.opcional { color: var(--muted); font-weight: 400; }
+.formulario label .ajuda-campo { font-weight: 400; }
+
+/* Caixa com a senha provisória: destaque forte, porque ela só aparece uma vez. */
+.senha-provisoria {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid rgba(31, 91, 73, 0.3);
+  border-radius: var(--radius-sm);
+  background: rgba(31, 91, 73, 0.06);
+}
+.senha-provisoria p { margin: 0; }
+.senha-provisoria dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: baseline; margin: 4px 0; }
+.senha-provisoria dt { color: var(--muted); font-size: 13px; }
+.senha-provisoria dd { margin: 0; overflow-wrap: anywhere; }
+/* Letra monoespaçada e espaçada, para ler a senha caractere por caractere sem confundir. */
+.codigo-senha { font-family: "Courier New", monospace; font-size: 22px; font-weight: 700; letter-spacing: 3px; color: var(--sucesso); }
+.senha-provisoria .botao-secundario { justify-self: start; }
+
+.cabecalho-lista-clientes { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; justify-content: space-between; }
+.selo-contagem { color: var(--muted); font-size: 13px; }
+.lista-clientes { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.cartao-cliente {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+.cartao-cliente-topo { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+.cartao-cliente-topo strong { overflow-wrap: anywhere; }
+.cartao-cliente-dado { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+a.cartao-cliente-dado { justify-self: start; color: var(--vinho); font-weight: 600; }
+.cartao-cliente-pedidos { color: var(--muted); font-size: 12px; }
+.etiqueta-origem {
+  flex: none;
+  padding: 3px 9px;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+.etiqueta-origem.presencial { color: var(--vinho); border-color: rgba(143, 29, 44, 0.3); background: rgba(143, 29, 44, 0.06); }
+
+/* No computador, o cadastro fica à esquerda e a lista à direita. */
+@media (min-width: 1000px) {
+  .area-clientes { grid-template-columns: minmax(320px, 400px) minmax(0, 1fr); align-items: start; }
+}
+/* Na tela de toque, o telefone vira um alvo do tamanho do dedo. */
+@media (pointer: coarse) {
+  a.cartao-cliente-dado { display: inline-flex; align-items: center; min-height: 44px; }
+}
+/* No celular, cada dado da senha provisória fica numa linha inteira, sem quebrar o e-mail no meio. */
+@media (max-width: 620px) {
+  .senha-provisoria dl { grid-template-columns: 1fr; gap: 2px; }
+  .senha-provisoria dd + dt { margin-top: 6px; }
+  .senha-provisoria dd { overflow-wrap: normal; word-break: normal; }
+}

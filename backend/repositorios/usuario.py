@@ -1,4 +1,5 @@
 from contextlib import closing
+from typing import Optional
 import hashlib
 
 import psycopg2
@@ -55,6 +56,13 @@ def inicializar() -> None:
             )
             # Sem isso, a tabela ficaria aberta pela API pública do Supabase; as outras tabelas também usam RLS.
             cursor.execute("ALTER TABLE recuperacoes_senha ENABLE ROW LEVEL SECURITY")
+            # Campos do cadastro presencial, acrescentados à tabela que já existe em produção.
+            # origem diz como a conta nasceu: 'site' (a própria pessoa se cadastrou) ou 'presencial' (o estúdio cadastrou).
+            # DEFAULT 'site' preenche as contas antigas, que todas vieram do site.
+            cursor.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefone VARCHAR(30)")
+            cursor.execute(
+                "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS origem VARCHAR(20) NOT NULL DEFAULT 'site'"
+            )
             banco.commit()
 
 
@@ -116,7 +124,15 @@ def buscar_por_id(usuario_id: int):
 
 
 # Cria uma nova conta para o sistema e retorna o usuário salvo.
-def criar_usuario(nome: str, email: str, senha: str, perfil: str = "cliente"):
+# telefone e origem têm valor padrão, então o cadastro pelo site continua chamando igual.
+def criar_usuario(
+    nome: str,
+    email: str,
+    senha: str,
+    perfil: str = "cliente",
+    telefone: Optional[str] = None,
+    origem: str = "site",
+):
     email_normalizado = email.lower().strip()
     senha_hash = _hash_senha(senha)
 
@@ -131,15 +147,32 @@ def criar_usuario(nome: str, email: str, senha: str, perfil: str = "cliente"):
 
             cursor.execute(
                 """
-                INSERT INTO usuarios (nome, email, senha_hash, perfil)
-                VALUES (%s, %s, %s, %s)
-                RETURNING id, nome, email, perfil
+                INSERT INTO usuarios (nome, email, senha_hash, perfil, telefone, origem)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING id, nome, email, perfil, telefone, origem
                 """,
-                (nome.strip(), email_normalizado, senha_hash, perfil.lower()),
+                (nome.strip(), email_normalizado, senha_hash, perfil.lower(), telefone, origem),
             )
             usuario = cursor.fetchone()
             banco.commit()
             return dict(usuario)
+
+
+# Lista as clientes para o estúdio, com quantos pedidos cada uma já fez.
+# A subconsulta entre parênteses conta os pedidos de cada linha; nunca devolve a senha.
+def listar_clientes() -> list:
+    with closing(_conectar()) as banco:
+        with banco.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """
+                SELECT usuarios.id, usuarios.nome, usuarios.email, usuarios.telefone, usuarios.origem,
+                       (SELECT COUNT(*) FROM tatuagens WHERE tatuagens.cliente_id = usuarios.id) AS pedidos
+                FROM usuarios
+                WHERE usuarios.perfil = 'cliente'
+                ORDER BY usuarios.id DESC
+                """
+            )
+            return [dict(item) for item in cursor.fetchall()]
 
 
 # Conta os pedidos da última hora para limitar quantos e-mails uma conta pode receber.

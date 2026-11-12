@@ -157,9 +157,11 @@ function Conversa({ tatuagemId, usuario, titulo, aoLer }) {
       .finally(() => definirEnviando(false));
   }
 
-  // Enter envia, como nos aplicativos de conversa; Shift + Enter quebra a linha.
+  // No computador, Enter envia e Shift + Enter quebra a linha. No celular, como no WhatsApp,
+  // a tecla Enter do teclado quebra a linha e o envio é pelo botão, para não mandar mensagem pela metade.
   function aoDigitar(evento) {
-    if (evento.key === "Enter" && !evento.shiftKey) enviar(evento);
+    const ehToque = window.matchMedia("(pointer: coarse)").matches;
+    if (evento.key === "Enter" && !evento.shiftKey && !ehToque) enviar(evento);
   }
 
   return (

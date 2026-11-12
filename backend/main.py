@@ -6,7 +6,7 @@ from repositorios import mensagem as repositorio_mensagem
 from repositorios import passo as repositorio_passo
 from repositorios import tatuagem as repositorio_tatuagem
 from repositorios import usuario as repositorio_usuario
-from rotas import mensagens, passos, tatuagens, usuarios
+from rotas import clientes, mensagens, passos, tatuagens, usuarios
 
 # A API é inicializada com a estrutura necessária para autenticação por JWT e perfil de usuário.
 app = FastAPI(
@@ -16,6 +16,7 @@ app = FastAPI(
         {"name": "Passos", "description": "Histórico e andamento dos pedidos."},
         {"name": "Usuários", "description": "Login, autenticação e dados do usuário."},
         {"name": "Mensagens", "description": "Conversa entre cliente e tatuador sobre cada pedido."},
+        {"name": "Clientes", "description": "Cadastro presencial e lista de clientes, para o tatuador."},
     ],
 )
 
@@ -44,6 +45,7 @@ app.include_router(tatuagens.router)
 app.include_router(passos.router)
 app.include_router(usuarios.router)
 app.include_router(mensagens.router)
+app.include_router(clientes.router)
 
 # Inicializa apenas quando a URL do PostgreSQL estiver preenchida.
 # Em desenvolvimento local o .env deve definir URL_DO_BANCO; em deploy do Vercel essa variável
