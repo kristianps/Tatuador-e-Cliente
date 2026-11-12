@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { enderecoApi } from "../api.js";
+import AssistenteIA from "../componentes/AssistenteIA.jsx";
 
 const locaisDisponiveis = [
   "Antebraço interno",
@@ -30,12 +31,23 @@ function PedirTatuagem({ perfil, figuras }) {
   const [estado, definirEstado] = useState("pronto");
   const [mensagem, definirMensagem] = useState("");
   const [mostrarIdeiaLivre, definirMostrarIdeiaLivre] = useState(false);
+  // Rascunho criado com a assistente de IA e anexado ao pedido (data URL), ou vazio.
+  const [imagemIa, definirImagemIa] = useState("");
   // Atualiza o passo em destaque conforme a cliente escolhe uma referência, a região do corpo e o tamanho.
   const passoAtual = localCorpo && tamanhoCm
     ? 3
     : figuraSelecionada || ideiaLivre.trim()
       ? 2
       : 1;
+
+  // Recebe da assistente o rascunho e o resumo da ideia, e preenche o pedido com eles.
+  function usarIdeiaDaIa({ imagem, ideia }) {
+    definirImagemIa(imagem);
+    // Só as palavras da cliente: o pedido já é enviado como "O que vem à mente da cliente: …".
+    definirIdeiaLivre(ideia);
+    // Abre o campo da ideia livre para a cliente ver e ajustar o texto antes de enviar.
+    definirMostrarIdeiaLivre(true);
+  }
 
   // Alterna a escolha de uma única referência do catálogo.
   function alternarFigura(figuraId) {
@@ -79,6 +91,8 @@ function PedirTatuagem({ perfil, figuras }) {
         ideia: partesDaIdeia.join(". "),
         local_corpo: localCorpo,
         tamanho_cm: Number(tamanhoCm),
+        // undefined some do JSON, então pedidos sem imagem continuam iguais.
+        imagem_ia: imagemIa || undefined,
       }),
     })
       .then((resposta) => {
@@ -95,6 +109,7 @@ function PedirTatuagem({ perfil, figuras }) {
         definirIdeiaLivre("");
         definirLocalCorpo("");
         definirTamanhoCm("");
+        definirImagemIa("");
       })
       .catch((erro) => {
         definirEstado("erro");
@@ -150,6 +165,16 @@ function PedirTatuagem({ perfil, figuras }) {
               : `Selecionado: ${figuras.find((figura) => figura.id === figuraSelecionada)?.nome ?? ""}`}
           </p>
         </fieldset>
+
+        <AssistenteIA aoUsar={usarIdeiaDaIa} />
+
+        {imagemIa && (
+          <div className="rascunho-anexado">
+            <img src={imagemIa} alt="Rascunho da IA anexado ao pedido" />
+            <p>Rascunho da IA anexado. O estúdio vai recebê-lo junto com o pedido.</p>
+            <button className="botao-secundario" type="button" onClick={() => definirImagemIa("")}>Remover</button>
+          </div>
+        )}
 
         <section className="ideia-personalizada">
           <button

@@ -2,11 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 import configuracao
+from repositorios import ia as repositorio_ia
 from repositorios import mensagem as repositorio_mensagem
 from repositorios import passo as repositorio_passo
 from repositorios import tatuagem as repositorio_tatuagem
 from repositorios import usuario as repositorio_usuario
-from rotas import clientes, mensagens, passos, tatuagens, usuarios
+from rotas import clientes, ia, mensagens, passos, tatuagens, usuarios
 
 # A API é inicializada com a estrutura necessária para autenticação por JWT e perfil de usuário.
 app = FastAPI(
@@ -17,6 +18,7 @@ app = FastAPI(
         {"name": "Usuários", "description": "Login, autenticação e dados do usuário."},
         {"name": "Mensagens", "description": "Conversa entre cliente e tatuador sobre cada pedido."},
         {"name": "Clientes", "description": "Cadastro presencial e lista de clientes, para o tatuador."},
+        {"name": "Inteligência artificial", "description": "Assistente de ideias, imagem do rascunho e sugestões de resposta."},
     ],
 )
 
@@ -46,6 +48,7 @@ app.include_router(passos.router)
 app.include_router(usuarios.router)
 app.include_router(mensagens.router)
 app.include_router(clientes.router)
+app.include_router(ia.router)
 
 # Inicializa apenas quando a URL do PostgreSQL estiver preenchida.
 # Em desenvolvimento local o .env deve definir URL_DO_BANCO; em deploy do Vercel essa variável
@@ -58,6 +61,8 @@ if configuracao.URL_DO_BANCO:
         repositorio_usuario.criar_usuarios_iniciais()
         # A conversa depende de tatuagens e usuarios, por isso a tabela dela é criada por último.
         repositorio_mensagem.inicializar()
+        # O controle de uso da IA depende de usuarios.
+        repositorio_ia.inicializar()
     except Exception as erro:
         print(f"Aviso de inicialização do banco: {erro}")
 else:

@@ -105,3 +105,21 @@ flowchart LR
 - O projeto atual ainda continha pontos específicos de MySQL; a troca para PostgreSQL exige revisar todas as strings de conexão e os comandos SQL específicos.
 - A API continua sendo a camada responsável pela validação, autenticação e escrita no banco.
 - A tela continua sendo um cliente web, sem conter a senha nem a chave do banco em código.
+
+## 7. Inteligência artificial
+
+```mermaid
+flowchart LR
+    navegador["Navegador\nCliente"] -->|HTTPS 443\n/api/ia/...| api["API na Vercel\nFastAPI"]
+    api -->|HTTPS 443\ntexto| google["Google AI Studio\nGemini"]
+    api -->|HTTPS 443\nimagem e reserva de texto| openrouter["OpenRouter"]
+    api -->|SSL/TLS 6543| supabase[("Supabase\nPostgreSQL")]
+```
+
+- O navegador nunca fala com a IA direto: chama a API, e só a API tem as chaves.
+- Texto (assistente de ideias e sugestões de resposta): Google AI Studio; se falhar, OpenRouter.
+- Imagem do rascunho: OpenRouter; se falhar, Google. As duas exigem crédito ou cobrança ativa na conta.
+- Variáveis de ambiente do projeto da API na Vercel e do `backend/.env`: `GOOGLE_API_KEY`, `OPENROUTER_API_KEY`
+  e, opcionais, `GOOGLE_MODELO_TEXTO`, `GOOGLE_MODELO_IMAGEM`, `OPENROUTER_MODELO_TEXTO`, `OPENROUTER_MODELO_IMAGEM`.
+- Limite por pessoa a cada 24 horas, guardado na tabela `uso_ia`: 40 mensagens com a assistente, 5 imagens, 30 sugestões.
+- O rascunho anexado ao pedido fica na tabela `imagens_tatuagem`, separado da tabela `tatuagens`.

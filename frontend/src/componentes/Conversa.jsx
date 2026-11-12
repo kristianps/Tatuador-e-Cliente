@@ -43,6 +43,11 @@ function Conversa({ tatuagemId, usuario, titulo, aoLer }) {
   const aoLerRef = useRef(aoLer);
   aoLerRef.current = aoLer;
   const listaRef = useRef(null);
+  const textoRef = useRef(null);
+  // Respostas sugeridas pela IA e o estado do pedido de sugestões.
+  const [sugestoes, definirSugestoes] = useState([]);
+  const [carregandoSugestoes, definirCarregandoSugestoes] = useState(false);
+  const [erroSugestoes, definirErroSugestoes] = useState("");
 
   // Conta para a API que a pessoa viu a conversa até a última mensagem na tela.
   // Só marca com a aba visível: mensagem que chegou com a aba escondida continua como não lida.
@@ -157,6 +162,33 @@ function Conversa({ tatuagemId, usuario, titulo, aoLer }) {
       .finally(() => definirEnviando(false));
   }
 
+  // Pede à IA três respostas prontas para esta conversa. A pessoa escolhe uma, pode editar e envia.
+  function pedirSugestoes() {
+    definirCarregandoSugestoes(true);
+    definirErroSugestoes("");
+    definirSugestoes([]);
+    fetch(`${enderecoApi}/ia/sugestoes-resposta`, {
+      method: "POST",
+      headers: cabecalhosComToken({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ tatuagem_id: tatuagemId }),
+    })
+      .then(async (resposta) => {
+        const dados = await resposta.json().catch(() => ({}));
+        if (!resposta.ok) throw new Error(typeof dados.detail === "string" ? dados.detail : "Não foi possível sugerir respostas agora.");
+        return dados;
+      })
+      .then((dados) => definirSugestoes(dados.sugestoes))
+      .catch((erroIa) => definirErroSugestoes(erroIa.message))
+      .finally(() => definirCarregandoSugestoes(false));
+  }
+
+  // Coloca a sugestão escolhida na caixa de texto, sem enviar: a pessoa revisa antes.
+  function escolherSugestao(sugestao) {
+    definirTexto(sugestao);
+    definirSugestoes([]);
+    textoRef.current?.focus();
+  }
+
   // No computador, Enter envia e Shift + Enter quebra a linha. No celular, como no WhatsApp,
   // a tecla Enter do teclado quebra a linha e o envio é pelo botão, para não mandar mensagem pela metade.
   function aoDigitar(evento) {
@@ -195,8 +227,27 @@ function Conversa({ tatuagemId, usuario, titulo, aoLer }) {
 
       {erro && <p className="aviso erro" role="alert">{erro}</p>}
 
+      {/* Mensagens automáticas: a IA sugere respostas com base no pedido e nas últimas mensagens. */}
+      <div className="sugestoes-ia">
+        <button className="botao-sugerir" type="button" onClick={pedirSugestoes} disabled={carregandoSugestoes}>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></svg>
+          {carregandoSugestoes ? "Pensando em respostas…" : "Sugerir respostas com IA"}
+        </button>
+        {erroSugestoes && <p className="aviso erro" role="alert">{erroSugestoes}</p>}
+        {sugestoes.length > 0 && (
+          <ul className="lista-sugestoes" aria-label="Respostas sugeridas">
+            {sugestoes.map((sugestao) => (
+              <li key={sugestao}>
+                <button type="button" onClick={() => escolherSugestao(sugestao)}>{sugestao}</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       <form className="conversa-formulario" onSubmit={enviar}>
         <textarea
+          ref={textoRef}
           aria-label="Escrever mensagem"
           placeholder="Escreva uma mensagem…"
           rows={1}

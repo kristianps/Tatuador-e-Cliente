@@ -1923,3 +1923,182 @@ a.cartao-cliente-dado { justify-self: start; color: var(--vinho); font-weight: 6
   .esteira-fotos { padding-bottom: 14px; }
   .esteira-trilho li { width: 68px; height: 78px; border-radius: 10px; }
 }
+
+/* ======================================================================
+   Inteligência artificial: assistente de ideias, rascunhos e sugestões
+   ====================================================================== */
+
+/* Assistente de ideias na tela de pedido. Fundo escuro, como a vitrine, para se destacar do formulário. */
+.assistente-ia {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(232, 180, 187, 0.25);
+  border-radius: var(--radius);
+  color: #f7f2ee;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(180, 47, 61, 0.45), transparent 50%),
+    linear-gradient(160deg, #1f1b1d, #141314);
+  box-shadow: var(--sombra-moderna);
+}
+.assistente-ia h2 { margin: 2px 0 4px; font-family: Georgia, "Times New Roman", serif; font-size: 22px; }
+.assistente-ia p { margin: 0; }
+.assistente-ia.fechada { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+.assistente-ia.fechada p:not(.assistente-selo) { color: #d5c9c2; font-size: 14px; line-height: 1.45; }
+.assistente-selo { color: var(--vinho-3); font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; }
+.assistente-topo { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; }
+
+/* Falas da conversa: as da cliente à direita, as da assistente à esquerda. */
+.assistente-falas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 340px;
+  margin: 0;
+  padding: 4px 2px;
+  overflow-y: auto;
+  list-style: none;
+}
+.fala-ia, .fala-cliente {
+  max-width: 88%;
+  padding: 10px 13px;
+  border-radius: 14px;
+  font-size: 15px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.fala-ia { align-self: flex-start; border: 1px solid rgba(255, 255, 255, 0.12); border-bottom-left-radius: 4px; background: rgba(255, 255, 255, 0.07); }
+.fala-cliente { align-self: flex-end; border-bottom-right-radius: 4px; background: var(--vinho); }
+.fala-ia.pensando { color: #d5c9c2; font-style: italic; }
+.fala-ia.pensando span { animation: piscar-cursor 1s steps(1) infinite; }
+
+.assistente-atalhos { display: flex; flex-wrap: wrap; gap: 8px; }
+.atalho-ia {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid rgba(232, 180, 187, 0.35);
+  border-radius: 999px;
+  color: #f7f2ee;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 13px;
+  cursor: pointer;
+}
+.atalho-ia:hover { background: rgba(255, 255, 255, 0.12); }
+
+.assistente-escrever { display: flex; gap: 8px; align-items: flex-end; }
+.formulario .assistente-escrever textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 52px;
+  max-height: 140px;
+  color: var(--text);
+  background: #fff;
+}
+.assistente-escrever .botao-principal { flex: none; justify-self: auto; }
+.assistente-ia .ajuda-campo { color: #bfb3ad; }
+.assistente-ia .aviso { margin: 0; }
+.assistente-ia .botao-secundario { justify-self: start; }
+
+/* Rascunho gerado: imagem grande, com o aviso de que o desenho final é do tatuador. */
+.assistente-imagem { display: grid; gap: 10px; }
+.rascunho-ia { display: grid; gap: 10px; margin: 0; }
+.rascunho-ia img {
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 1;
+  object-fit: contain;
+  border-radius: 14px;
+  background: #fff;
+}
+.rascunho-ia figcaption { color: #d5c9c2; font-size: 13px; }
+.rascunho-ia .botao-principal { justify-self: start; }
+
+/* Rascunho já anexado ao pedido, logo abaixo da assistente. */
+.rascunho-anexado {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid rgba(31, 91, 73, 0.3);
+  border-radius: var(--radius-sm);
+  background: rgba(31, 91, 73, 0.06);
+}
+.rascunho-anexado img { width: 72px; height: 72px; border-radius: 10px; object-fit: cover; background: #fff; }
+.rascunho-anexado p { margin: 0; color: var(--sucesso); font-size: 14px; }
+
+/* Rascunho mostrado no histórico da cliente e na ficha do tatuador. */
+.imagem-ia-pedido { display: grid; gap: 6px; justify-items: start; margin: 12px 0; }
+.imagem-ia-pedido img {
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 1;
+  object-fit: contain;
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  background: #fff;
+}
+.imagem-ia-pedido figcaption { color: var(--muted); font-size: 12px; }
+
+/* Sugestões de resposta da IA, logo acima da caixa de mensagem. */
+.sugestoes-ia { display: grid; gap: 8px; }
+.botao-sugerir {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  justify-self: start;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px dashed rgba(143, 29, 44, 0.45);
+  border-radius: 999px;
+  color: var(--vinho);
+  background: rgba(143, 29, 44, 0.04);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.botao-sugerir:disabled { opacity: 0.7; cursor: progress; }
+.botao-sugerir svg { width: 16px; height: 16px; fill: currentColor; }
+.lista-sugestoes { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.lista-sugestoes button {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  color: var(--text);
+  background: #fff;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+}
+.lista-sugestoes button:hover { border-color: rgba(143, 29, 44, 0.45); }
+
+@media (pointer: coarse) {
+  .botao-sugerir { min-height: 44px; }
+  .lista-sugestoes button { min-height: 44px; }
+}
+
+/* No celular, o convite da assistente empilha o texto sobre o botão, que ocupa a largura toda. */
+@media (max-width: 620px) {
+  .assistente-ia { padding: 16px 14px; }
+  .assistente-ia.fechada { grid-template-columns: 1fr; }
+  .assistente-ia .botao-principal { width: 100%; }
+  .assistente-escrever .botao-principal { width: auto; }
+  .rascunho-anexado { grid-template-columns: 56px minmax(0, 1fr); }
+  .rascunho-anexado img { width: 56px; height: 56px; }
+  .rascunho-anexado .botao-secundario { grid-column: 1 / -1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fala-ia.pensando span { animation: none; }
+}
+
+/* No computador o formulário de pedido é uma grade de 3 colunas; a assistente e o rascunho ocupam a largura toda. */
+@media (min-width: 1000px) {
+  .painel-pedido .formulario > .assistente-ia,
+  .painel-pedido .formulario > .rascunho-anexado { grid-column: 1 / -1; align-self: start; }
+  .painel-pedido .assistente-ia .botao-principal { justify-self: start; }
+  .painel-pedido .assistente-escrever .botao-principal { align-self: stretch; }
+}

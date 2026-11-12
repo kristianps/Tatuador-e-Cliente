@@ -31,7 +31,41 @@ def inicializar() -> None:
             # IF NOT EXISTS deixa o comando rodar em toda inicialização sem dar erro;
             # a coluna aceita vazio porque os pedidos antigos foram feitos sem tamanho.
             cursor.execute("ALTER TABLE tatuagens ADD COLUMN IF NOT EXISTS tamanho_cm INTEGER")
+            # A imagem criada com a IA fica numa tabela à parte: ela é grande, e a lista de pedidos,
+            # consultada a cada poucos segundos, não precisa carregá-la junto.
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS imagens_tatuagem (
+                    tatuagem_id INTEGER PRIMARY KEY REFERENCES tatuagens(id) ON DELETE CASCADE,
+                    imagem TEXT NOT NULL
+                )
+                """
+            )
+            cursor.execute("ALTER TABLE imagens_tatuagem ENABLE ROW LEVEL SECURITY")
             banco.commit()
+
+
+# Guarda a imagem da IA de um pedido, no formato data URL (o tipo da imagem e o conteúdo em base64).
+def salvar_imagem(tatuagem_id: int, imagem: str) -> None:
+    with closing(_conectar()) as banco:
+        with banco.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO imagens_tatuagem (tatuagem_id, imagem) VALUES (%s, %s)
+                ON CONFLICT (tatuagem_id) DO UPDATE SET imagem = EXCLUDED.imagem
+                """,
+                (tatuagem_id, imagem),
+            )
+            banco.commit()
+
+
+# Busca a imagem da IA de um pedido, ou None quando o pedido não tem imagem.
+def buscar_imagem(tatuagem_id: int) -> Optional[str]:
+    with closing(_conectar()) as banco:
+        with banco.cursor() as cursor:
+            cursor.execute("SELECT imagem FROM imagens_tatuagem WHERE tatuagem_id = %s", (tatuagem_id,))
+            linha = cursor.fetchone()
+            return linha[0] if linha is not None else None
 
 
 def criar(dados: dict) -> dict:

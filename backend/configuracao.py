@@ -41,3 +41,15 @@ EMAIL_REMETENTE = (os.getenv("EMAIL_REMETENTE") or SMTP_USUARIO).strip()
 # Endereço público da tela usado no link do e-mail. Vem da configuração, e não da requisição,
 # para que ninguém consiga enviar um link apontando para outro site.
 URL_DO_SITE = (os.getenv("URL_DO_SITE") or "").strip().rstrip("/")
+
+# Inteligência artificial. As chaves ficam só no servidor (.env e variáveis da Vercel), nunca na tela,
+# porque quem tem a chave gasta em nome do estúdio.
+# Google AI Studio é o serviço principal para texto; a OpenRouter fica de reserva e é a primeira opção para imagem.
+GOOGLE_API_KEY = (os.getenv("GOOGLE_API_KEY") or "").strip()
+OPENROUTER_API_KEY = (os.getenv("OPENROUTER_API_KEY") or "").strip()
+
+# Os nomes dos modelos mudam com o tempo; ficam na configuração para trocar sem mexer no código.
+GOOGLE_MODELO_TEXTO = os.getenv("GOOGLE_MODELO_TEXTO") or "gemini-3-flash-preview"
+GOOGLE_MODELO_IMAGEM = os.getenv("GOOGLE_MODELO_IMAGEM") or "gemini-3.1-flash-image"
+OPENROUTER_MODELO_TEXTO = os.getenv("OPENROUTER_MODELO_TEXTO") or "google/gemma-4-31b-it:free"
+OPENROUTER_MODELO_IMAGEM = os.getenv("OPENROUTER_MODELO_IMAGEM") or "google/gemini-3.1-flash-image"

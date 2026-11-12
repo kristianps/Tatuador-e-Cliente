@@ -5,8 +5,23 @@ from repositorios import tatuagem as repositorio_tatuagem
 
 
 # Aplica a etapa inicial definida na cartilha antes de guardar um novo pedido.
+# A imagem da IA, quando vem, é guardada à parte, ligada ao pedido recém-criado.
 def criar_tatuagem(dados: dict) -> dict:
-    return repositorio_tatuagem.criar(dados)
+    tatuagem = repositorio_tatuagem.criar(dados)
+    if dados.get("imagem_ia"):
+        repositorio_tatuagem.salvar_imagem(tatuagem["id"], dados["imagem_ia"])
+    return tatuagem
+
+
+# Devolve a imagem da IA do pedido, ou None quando não existe ou a pessoa não pode ver.
+# O tatuador vê a de qualquer pedido; a cliente, só a dos pedidos dela.
+def buscar_imagem(tatuagem_id: int, usuario: dict) -> Optional[str]:
+    tatuagem = repositorio_tatuagem.buscar_por_id(tatuagem_id)
+    if tatuagem is None:
+        return None
+    if usuario["perfil"] != "tatuador" and tatuagem["cliente_id"] != usuario["id"]:
+        return None
+    return repositorio_tatuagem.buscar_imagem(tatuagem_id)
 
 
 # Busca uma tatuagem para a rota responder com os dados ou com status 404.

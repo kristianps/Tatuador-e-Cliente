@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { enderecoApi } from "../api.js";
+import ImagemIA from "../componentes/ImagemIA.jsx";
 
 // Mantém os valores que a API espera e apresenta nomes corrigidos na tela.
 const etapas = ["pedida", "desenho aprovado", "em sessões", "finalizada", "retoque feito"];
@@ -178,6 +179,9 @@ function Ficha({ tatuagemId, aoVoltar, aoAbrirConversa }) {
             <div><span>LOCAL</span><strong>{tatuagem.local_corpo}</strong></div>
             <div><span>TAMANHO</span><strong>{tatuagem.tamanho_cm ? `${tatuagem.tamanho_cm} cm` : "Não informado"}</strong></div>
           </div>
+
+          {/* Se a cliente criou um rascunho com a IA, o tatuador vê aqui como referência. */}
+          <ImagemIA tatuagemId={tatuagem.id} />
 
           <form className="formulario formulario-andamento" onSubmit={atualizarAndamento}>
             <fieldset className="seletor-etapa">
