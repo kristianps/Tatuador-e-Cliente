@@ -2307,3 +2307,68 @@ a.cartao-cliente-dado { justify-self: start; color: var(--vinho); font-weight: 6
   .foto-escolhida .botao-secundario { grid-column: 1 / -1; }
   .visualizador-foto { padding: 12px; }
 }
+
+/* ======================================================================
+   Escolha do local do corpo: botões agrupados por região e a opção "Outro"
+   ====================================================================== */
+.seletor-local { display: grid; gap: 12px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.seletor-local legend { margin-bottom: 10px; padding: 0; font-size: 14px; font-weight: 700; }
+.regioes-local { display: grid; gap: 14px; }
+.regiao-titulo {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.opcoes-local { display: flex; flex-wrap: wrap; gap: 8px; }
+.opcao-local {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  color: var(--text);
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.opcao-local:hover { border-color: rgba(143, 29, 44, 0.45); }
+/* O escolhido fica em vinho e ganha um ✓, para não depender só da cor. */
+.opcao-local.selecionada {
+  color: #fff;
+  border-color: var(--vinho);
+  background: linear-gradient(135deg, var(--vinho), var(--vinho-2));
+  box-shadow: 0 6px 14px rgba(143, 29, 44, 0.22);
+}
+.opcao-local.selecionada::before { content: "✓ "; }
+.opcao-outro { border-style: dashed; }
+.opcao-local:focus-visible { outline: 3px solid rgba(143, 29, 44, 0.25); outline-offset: 2px; }
+
+/* Campo livre que aparece com "Outro". */
+.campo-local-outro {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid rgba(143, 29, 44, 0.25);
+  border-radius: var(--radius-sm);
+  background: rgba(143, 29, 44, 0.04);
+  font-size: 14px;
+  font-weight: 700;
+}
+.campo-local-outro .ajuda-campo { margin: 0; font-weight: 400; }
+
+/* Em telas largas, as regiões ficam em duas colunas. */
+@media (min-width: 700px) {
+  .regioes-local { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 28px; }
+}
+@media (pointer: coarse) {
+  .opcao-local { min-height: 44px; }
+}
+
+/* Em tela de toque, o botão de local tocado e não escolhido não fica com a borda destacada. */
+@media (hover: none) {
+  .opcao-local:hover:not(.selecionada) { border-color: var(--borda); }
+}

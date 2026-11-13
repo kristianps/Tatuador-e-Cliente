@@ -3,29 +3,28 @@ import { useState } from "react";
 import { enderecoApi } from "../api.js";
 import AssistenteIA from "../componentes/AssistenteIA.jsx";
 
-const locaisDisponiveis = [
-  "Antebraço interno",
-  "Antebraço externo",
-  "Braço",
-  "Ombro",
-  "Peito",
-  "Costela",
-  "Costas",
-  "Nuca",
-  "Mão",
-  "Coxa",
-  "Panturrilha",
-  "Canela",
-  "Tornozelo",
-  "Pé",
+// Locais do corpo agrupados por região, para a cliente achar mais rápido.
+// Os nomes continuam os mesmos de antes, então os pedidos antigos seguem iguais na agenda.
+const regioesDoCorpo = [
+  { regiao: "Braços e mãos", locais: ["Antebraço interno", "Antebraço externo", "Braço", "Ombro", "Mão"] },
+  { regiao: "Tronco", locais: ["Peito", "Costela", "Costas"] },
+  { regiao: "Cabeça e pescoço", locais: ["Nuca"] },
+  { regiao: "Pernas e pés", locais: ["Coxa", "Panturrilha", "Canela", "Tornozelo", "Pé"] },
 ];
+
+// Valor usado quando a cliente escolhe "Outro" e escreve o local com as próprias palavras.
+const LOCAL_OUTRO = "outro";
 
 // Permite que a cliente escolha decalques ou envie uma ideia própria ao estúdio.
 function PedirTatuagem({ perfil, figuras }) {
   // useState guarda a referência escolhida, a ideia livre e os estados do envio.
   const [figuraSelecionada, definirFiguraSelecionada] = useState("");
   const [ideiaLivre, definirIdeiaLivre] = useState("");
+  // Local escolhido nos botões, ou LOCAL_OUTRO; quando é "Outro", o texto fica em localOutro.
   const [localCorpo, definirLocalCorpo] = useState("");
+  const [localOutro, definirLocalOutro] = useState("");
+  // O local que vai para a API: o botão escolhido ou o que a cliente escreveu.
+  const localFinal = localCorpo === LOCAL_OUTRO ? localOutro.trim() : localCorpo;
   // Guardado como texto porque é o que o campo devolve; vira número só no envio.
   const [tamanhoCm, definirTamanhoCm] = useState("");
   const [estado, definirEstado] = useState("pronto");
@@ -34,7 +33,7 @@ function PedirTatuagem({ perfil, figuras }) {
   // Rascunho criado com a assistente de IA e anexado ao pedido (data URL), ou vazio.
   const [imagemIa, definirImagemIa] = useState("");
   // Atualiza o passo em destaque conforme a cliente escolhe uma referência, a região do corpo e o tamanho.
-  const passoAtual = localCorpo && tamanhoCm
+  const passoAtual = localFinal && tamanhoCm
     ? 3
     : figuraSelecionada || ideiaLivre.trim()
       ? 2
@@ -78,6 +77,13 @@ function PedirTatuagem({ perfil, figuras }) {
       return;
     }
 
+    // Os botões de local não são campos de formulário, então o navegador não confere sozinho.
+    if (!localFinal) {
+      definirEstado("erro");
+      definirMensagem(localCorpo === LOCAL_OUTRO ? "Escreva onde você quer tatuar." : "Escolha o local do corpo.");
+      return;
+    }
+
     definirEstado("carregando");
     definirMensagem("");
 
@@ -93,7 +99,7 @@ function PedirTatuagem({ perfil, figuras }) {
       body: JSON.stringify({
         cliente_id: Number(perfil.id),
         ideia: partesDaIdeia.join(". "),
-        local_corpo: localCorpo,
+        local_corpo: localFinal,
         tamanho_cm: Number(tamanhoCm),
         // undefined some do JSON, então pedidos sem imagem continuam iguais.
         imagem_ia: imagemIa || undefined,
@@ -112,6 +118,7 @@ function PedirTatuagem({ perfil, figuras }) {
         definirFiguraSelecionada("");
         definirIdeiaLivre("");
         definirLocalCorpo("");
+        definirLocalOutro("");
         definirTamanhoCm("");
         definirImagemIa("");
       })
@@ -212,22 +219,65 @@ function PedirTatuagem({ perfil, figuras }) {
             )}
           </section>
 
-          {/* Local e tamanho lado a lado no computador; no celular, um embaixo do outro. */}
-          <div className="linha-campos">
-            <label className="campo-local-corpo">
-              Local do corpo
-              <select
-                value={localCorpo}
-                onChange={(evento) => definirLocalCorpo(evento.target.value)}
-                required
-              >
-                <option value="" disabled>Selecione uma região do corpo</option>
-                {locaisDisponiveis.map((local) => (
-                  <option key={local} value={local}>{local}</option>
-                ))}
-              </select>
-            </label>
+          {/* Local do corpo em botões agrupados por região, com a opção "Outro" para escrever livremente. */}
+          <fieldset className="seletor-local">
+            <legend>Local do corpo</legend>
+            <div className="regioes-local">
+              {regioesDoCorpo.map(({ regiao, locais }) => (
+                <div className="regiao-local" key={regiao}>
+                  <p className="regiao-titulo">{regiao}</p>
+                  <div className="opcoes-local">
+                    {locais.map((local) => (
+                      <button
+                        type="button"
+                        key={local}
+                        className={localCorpo === local ? "opcao-local selecionada" : "opcao-local"}
+                        // aria-pressed diz ao leitor de tela qual botão está escolhido.
+                        aria-pressed={localCorpo === local}
+                        onClick={() => definirLocalCorpo(local)}
+                      >
+                        {local}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <div className="regiao-local">
+                <p className="regiao-titulo">Não encontrou?</p>
+                <div className="opcoes-local">
+                  <button
+                    type="button"
+                    className={localCorpo === LOCAL_OUTRO ? "opcao-local opcao-outro selecionada" : "opcao-local opcao-outro"}
+                    aria-pressed={localCorpo === LOCAL_OUTRO}
+                    aria-expanded={localCorpo === LOCAL_OUTRO}
+                    onClick={() => definirLocalCorpo(LOCAL_OUTRO)}
+                  >
+                    {/* Escolhido, ganha o ✓ do estilo; o "+" só aparece enquanto ainda não foi escolhido. */}
+                    {localCorpo === LOCAL_OUTRO ? "Outro" : "+ Outro"}
+                  </button>
+                </div>
+              </div>
+            </div>
 
+            {localCorpo === LOCAL_OUTRO && (
+              <label className="campo-local-outro">
+                Onde você quer tatuar?
+                {/* O banco guarda até 120 caracteres no local; maxLength segue esse limite. */}
+                <input
+                  type="text"
+                  maxLength={120}
+                  placeholder="Ex.: atrás da orelha, lateral do dedo, quadril…"
+                  value={localOutro}
+                  onChange={(evento) => definirLocalOutro(evento.target.value)}
+                  required
+                  autoFocus
+                />
+                <span className="ajuda-campo">Escreva com suas palavras; o tatuador confirma com você se precisar.</span>
+              </label>
+            )}
+          </fieldset>
+
+          <div className="linha-campos">
             <label className="campo-local-corpo campo-tamanho">
               Tamanho aproximado (cm)
               {/* inputMode="numeric" abre o teclado de números no celular; min e max seguem o limite da API. */}
