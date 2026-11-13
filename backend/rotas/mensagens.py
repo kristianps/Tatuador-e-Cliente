@@ -42,7 +42,7 @@ def enviar_mensagem(
     dados: MensagemEntrada,
     usuario: dict = Depends(servico_usuario.requerer_perfil(GRUPOS_PERMITIDOS)),
 ):
-    mensagem, tatuagem, motivo = servico_mensagem.enviar_mensagem(tatuagem_id, usuario, dados.texto)
+    mensagem, tatuagem, motivo = servico_mensagem.enviar_mensagem(tatuagem_id, usuario, dados.texto, dados.imagem)
 
     if tatuagem is None:
         raise HTTPException(

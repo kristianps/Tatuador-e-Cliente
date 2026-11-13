@@ -40,7 +40,7 @@ function PedirTatuagem({ perfil, figuras }) {
       ? 2
       : 1;
 
-  // Recebe da assistente o rascunho e o resumo da ideia, e preenche o pedido com eles.
+  // Recebe da assistente a foto de referência e o resumo da ideia, e preenche o pedido com eles.
   function usarIdeiaDaIa({ imagem, ideia }) {
     definirImagemIa(imagem);
     // Só as palavras da cliente: o pedido já é enviado como "O que vem à mente da cliente: …".
@@ -67,10 +67,14 @@ function PedirTatuagem({ perfil, figuras }) {
     if (ideiaLivre.trim()) {
       partesDaIdeia.push(`O que vem à mente da cliente: ${ideiaLivre.trim()}`);
     }
+    // Uma foto de referência anexada também conta como ideia, mesmo sem texto escrito.
+    if (imagemIa && !ideiaLivre.trim()) {
+      partesDaIdeia.push("Foto de referência anexada pela cliente");
+    }
 
     if (partesDaIdeia.length === 0) {
       definirEstado("erro");
-      definirMensagem("Selecione um decalque ou conte o que vem à sua mente.");
+      definirMensagem("Selecione um decalque, anexe uma foto ou conte o que vem à sua mente.");
       return;
     }
 
@@ -168,79 +172,89 @@ function PedirTatuagem({ perfil, figuras }) {
 
         <AssistenteIA aoUsar={usarIdeiaDaIa} />
 
-        {imagemIa && (
-          <div className="rascunho-anexado">
-            <img src={imagemIa} alt="Rascunho da IA anexado ao pedido" />
-            <p>Rascunho da IA anexado. O estúdio vai recebê-lo junto com o pedido.</p>
-            <button className="botao-secundario" type="button" onClick={() => definirImagemIa("")}>Remover</button>
+        {/* Tudo o que a cliente preenche fica num bloco só, com título, em vez de solto no fim da página. */}
+        <section className="detalhes-pedido" aria-labelledby="titulo-detalhes-pedido">
+          <div className="detalhes-pedido-topo">
+            <h2 id="titulo-detalhes-pedido">Detalhes do pedido</h2>
+            <p>Conte sua ideia, escolha o local e o tamanho, e envie para o estúdio.</p>
           </div>
-        )}
 
-        <section className="ideia-personalizada">
-          <button
-            className="botao-secundario"
-            type="button"
-            aria-expanded={mostrarIdeiaLivre}
-            onClick={() => definirMostrarIdeiaLivre(!mostrarIdeiaLivre)}
-          >
-            {mostrarIdeiaLivre ? "Fechar ideia livre" : "Não encontrou? Conte o que vem à mente"}
-          </button>
-
-          {mostrarIdeiaLivre && (
-            <label className="campo-ideia-livre">
-              O que vem à sua mente?
-              <textarea
-                value={ideiaLivre}
-                onChange={(evento) => definirIdeiaLivre(evento.target.value)}
-                placeholder="Conte sua ideia com suas palavras. Não precisa escolher uma imagem."
-              />
-              <span className="ajuda-campo">
-                O estúdio recebe sua ideia junto com o pedido e pode usá-la como referência para novas opções do catálogo.
-              </span>
-            </label>
+          {imagemIa && (
+            <div className="rascunho-anexado">
+              <img src={imagemIa} alt="Imagem de referência anexada ao pedido" />
+              <p>Imagem de referência anexada. O estúdio vai recebê-la junto com o pedido.</p>
+              <button className="botao-secundario" type="button" onClick={() => definirImagemIa("")}>Remover</button>
+            </div>
           )}
-        </section>
 
-        {/* Local e tamanho lado a lado no computador; no celular, um embaixo do outro. */}
-        <div className="linha-campos">
-          <label className="campo-local-corpo">
-            Onde deseja tatuar?
-            <select
-              value={localCorpo}
-              onChange={(evento) => definirLocalCorpo(evento.target.value)}
-              required
+          <section className="ideia-personalizada">
+            <button
+              className="botao-secundario"
+              type="button"
+              aria-expanded={mostrarIdeiaLivre}
+              onClick={() => definirMostrarIdeiaLivre(!mostrarIdeiaLivre)}
             >
-              <option value="" disabled>Selecione uma região do corpo</option>
-              {locaisDisponiveis.map((local) => (
-                <option key={local} value={local}>{local}</option>
-              ))}
-            </select>
-          </label>
+              {mostrarIdeiaLivre ? "Fechar ideia livre" : "Não encontrou? Conte o que vem à mente"}
+            </button>
 
-          <label className="campo-local-corpo campo-tamanho">
-            Qual o tamanho, em centímetros?
-            {/* inputMode="numeric" abre o teclado de números no celular; min e max seguem o limite da API. */}
-            <span className="entrada-com-unidade">
-              <input
-                type="number"
-                inputMode="numeric"
-                min="1"
-                max="100"
-                step="1"
-                placeholder="Ex.: 10"
-                value={tamanhoCm}
-                onChange={(evento) => definirTamanhoCm(evento.target.value)}
+            {mostrarIdeiaLivre && (
+              <label className="campo-ideia-livre">
+                O que vem à sua mente?
+                <textarea
+                  value={ideiaLivre}
+                  onChange={(evento) => definirIdeiaLivre(evento.target.value)}
+                  placeholder="Conte sua ideia com suas palavras. Não precisa escolher uma imagem."
+                />
+                <span className="ajuda-campo">
+                  O estúdio recebe sua ideia junto com o pedido e pode usá-la como referência para novas opções do catálogo.
+                </span>
+              </label>
+            )}
+          </section>
+
+          {/* Local e tamanho lado a lado no computador; no celular, um embaixo do outro. */}
+          <div className="linha-campos">
+            <label className="campo-local-corpo">
+              Local do corpo
+              <select
+                value={localCorpo}
+                onChange={(evento) => definirLocalCorpo(evento.target.value)}
                 required
-              />
-              <span aria-hidden="true">cm</span>
-            </span>
-            <span className="ajuda-campo">Medida aproximada do lado maior do desenho.</span>
-          </label>
-        </div>
+              >
+                <option value="" disabled>Selecione uma região do corpo</option>
+                {locaisDisponiveis.map((local) => (
+                  <option key={local} value={local}>{local}</option>
+                ))}
+              </select>
+            </label>
 
-        <button className="botao-principal" type="submit" disabled={estado === "carregando"}>
-          {estado === "carregando" ? "Enviando pedido…" : "Enviar pedido"}
-        </button>
+            <label className="campo-local-corpo campo-tamanho">
+              Tamanho aproximado (cm)
+              {/* inputMode="numeric" abre o teclado de números no celular; min e max seguem o limite da API. */}
+              <span className="entrada-com-unidade">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="1"
+                  max="100"
+                  step="1"
+                  placeholder="Ex.: 10"
+                  value={tamanhoCm}
+                  onChange={(evento) => definirTamanhoCm(evento.target.value)}
+                  required
+                />
+                <span aria-hidden="true">cm</span>
+              </span>
+              <span className="ajuda-campo">Medida aproximada do lado maior do desenho.</span>
+            </label>
+          </div>
+
+          <div className="detalhes-pedido-rodape">
+            <button className="botao-principal" type="submit" disabled={estado === "carregando"}>
+              {estado === "carregando" ? "Enviando pedido…" : "Enviar pedido"}
+            </button>
+          </div>
+        </section>
       </form>
 
       {mensagem && (

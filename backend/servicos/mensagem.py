@@ -26,18 +26,18 @@ def listar_mensagens(tatuagem_id: int, usuario: dict, depois_de: int = 0) -> Opt
 # Confere o acesso e o texto antes de gravar. Devolve uma tupla (mensagem, tatuagem, motivo),
 # como o serviço de passos, para a rota escolher o status só com if.
 def enviar_mensagem(
-    tatuagem_id: int, usuario: dict, texto: str
+    tatuagem_id: int, usuario: dict, texto: str, imagem: Optional[str] = None
 ) -> Tuple[Optional[dict], Optional[dict], Optional[str]]:
     tatuagem = repositorio_tatuagem.buscar_por_id(tatuagem_id)
     if tatuagem is None or not _pode_participar(tatuagem, usuario):
         return None, None, None
 
-    # strip tira espaços e quebras de linha das pontas; uma mensagem só de espaços é recusada.
+    # strip tira espaços e quebras de linha das pontas. A mensagem precisa ter texto ou foto.
     texto_limpo = texto.strip()
-    if not texto_limpo:
-        return None, tatuagem, "Escreva uma mensagem antes de enviar."
+    if not texto_limpo and not imagem:
+        return None, tatuagem, "Escreva uma mensagem ou anexe uma foto antes de enviar."
 
-    mensagem = repositorio_mensagem.criar(tatuagem_id, usuario["id"], texto_limpo)
+    mensagem = repositorio_mensagem.criar(tatuagem_id, usuario["id"], texto_limpo, imagem)
     return mensagem, tatuagem, None
 
 

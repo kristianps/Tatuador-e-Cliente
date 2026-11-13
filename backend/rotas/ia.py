@@ -45,7 +45,7 @@ def gerar_imagem(
     dados: ImagemEntrada,
     usuario: dict = Depends(servico_usuario.requerer_perfil(GRUPOS_PERMITIDOS)),
 ):
-    if not any(fala.papel == "cliente" for fala in dados.historico):
+    if not any(fala.papel == "cliente" and fala.texto.strip() for fala in dados.historico):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Conte sua ideia antes de gerar a imagem.")
 
     imagem, motivo = servico_ia.gerar_imagem(usuario, [fala.model_dump() for fala in dados.historico])

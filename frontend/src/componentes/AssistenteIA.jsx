@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
 import { enderecoApi } from "../api.js";
+import { TIPOS_ACEITOS, lerFoto, reduzirImagem } from "../imagens.js";
+import VisualizadorFoto from "./VisualizadorFoto.jsx";
 
 // Ideias prontas para a cliente começar a conversa com um toque.
 const sugestoesIniciais = [
@@ -25,60 +27,49 @@ function chamarIa(caminho, corpo) {
     });
 }
 
-// Reduz a imagem para no máximo 768 px e converte para JPEG antes de anexar ao pedido.
-// A imagem original da IA pode passar de 1 MB; assim o pedido fica leve para enviar e guardar.
-// canvas é uma área de desenho do navegador: a imagem é desenhada menor e exportada de novo.
-function reduzirImagem(dataUrl, ladoMaximo = 768) {
-  return new Promise((resolver) => {
-    const imagem = new Image();
-    imagem.onload = () => {
-      const escala = Math.min(1, ladoMaximo / Math.max(imagem.width, imagem.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(imagem.width * escala);
-      canvas.height = Math.round(imagem.height * escala);
-      const contexto = canvas.getContext("2d");
-      // Fundo branco: o JPEG não tem transparência.
-      contexto.fillStyle = "#ffffff";
-      contexto.fillRect(0, 0, canvas.width, canvas.height);
-      contexto.drawImage(imagem, 0, 0, canvas.width, canvas.height);
-      resolver(canvas.toDataURL("image/jpeg", 0.85));
-    };
-    // Se não der para reduzir, segue com a original.
-    imagem.onerror = () => resolver(dataUrl);
-    imagem.src = dataUrl;
+// Prepara a conversa para enviar: só a foto mais recente vai junto, as anteriores viram uma observação.
+// Assim cada pergunta não reenvia todas as fotos, o que deixaria o envio lento no celular.
+function prepararHistorico(historico) {
+  const ultimaComFoto = historico.map((fala) => Boolean(fala.imagem)).lastIndexOf(true);
+  return historico.slice(-20).map((fala, indice, lista) => {
+    const posicaoReal = historico.length - lista.length + indice;
+    if (!fala.imagem || posicaoReal === ultimaComFoto) return fala;
+    return { papel: fala.papel, texto: `${fala.texto} (a cliente tinha enviado uma foto antes)`.trim() };
   });
 }
 
 // Assistente de ideias com IA, dentro da tela de pedido.
-// A cliente conversa, gera um rascunho da tatuagem e pode anexá-lo ao pedido.
+// A cliente conversa, envia fotos de referência para a IA comentar e pode anexar uma foto ao pedido.
 function AssistenteIA({ aoUsar }) {
   const [aberta, definirAberta] = useState(false);
-  // historico guarda a conversa no formato que a API espera: papel e texto.
+  // historico guarda a conversa no formato que a API espera: papel, texto e, se houver, a foto.
   const [historico, definirHistorico] = useState([]);
   const [texto, definirTexto] = useState("");
+  const [foto, definirFoto] = useState("");
   const [pensando, definirPensando] = useState(false);
   const [erro, definirErro] = useState("");
-  const [imagem, definirImagem] = useState("");
-  const [gerandoImagem, definirGerandoImagem] = useState(false);
-  const [erroImagem, definirErroImagem] = useState("");
+  const [fotoAberta, definirFotoAberta] = useState("");
   const listaRef = useRef(null);
+  const arquivoRef = useRef(null);
 
   // Mantém a última fala visível dentro da caixa da conversa.
   useEffect(() => {
     if (listaRef.current) listaRef.current.scrollTop = listaRef.current.scrollHeight;
   }, [historico.length, pensando]);
 
-  // Manda a fala da cliente com a conversa inteira, porque a IA não guarda memória entre as chamadas.
-  function perguntar(conteudo) {
+  // Manda a fala da cliente (texto, foto ou os dois) com a conversa, porque a IA não guarda memória entre as chamadas.
+  function perguntar(conteudo, fotoDaFala = "") {
     const fala = conteudo.trim();
-    if (!fala || pensando) return;
-    const novoHistorico = [...historico, { papel: "cliente", texto: fala }];
+    if ((!fala && !fotoDaFala) || pensando) return;
+    const novaFala = { papel: "cliente", texto: fala, ...(fotoDaFala ? { imagem: fotoDaFala } : {}) };
+    const novoHistorico = [...historico, novaFala];
     definirHistorico(novoHistorico);
     definirTexto("");
+    definirFoto("");
     definirErro("");
     definirPensando(true);
 
-    chamarIa("/ia/assistente", { historico: novoHistorico.slice(-20) })
+    chamarIa("/ia/assistente", { historico: prepararHistorico(novoHistorico) })
       .then((dados) => definirHistorico((atual) => [...atual, { papel: "assistente", texto: dados.resposta }]))
       .catch((erroIa) => definirErro(erroIa.message))
       .finally(() => definirPensando(false));
@@ -86,27 +77,29 @@ function AssistenteIA({ aoUsar }) {
 
   function enviar(evento) {
     evento.preventDefault();
-    perguntar(texto);
+    perguntar(texto, foto);
   }
 
-  // Pede o rascunho da tatuagem com base no que já foi conversado.
-  function gerarImagem() {
-    definirGerandoImagem(true);
-    definirErroImagem("");
-    chamarIa("/ia/imagem", { historico: historico.slice(-20) })
-      .then((dados) => definirImagem(dados.imagem))
-      .catch((erroIa) => definirErroImagem(erroIa.message))
-      .finally(() => definirGerandoImagem(false));
+  // Lê a foto escolhida e deixa pronta para ir com a próxima fala.
+  function escolherFoto(evento) {
+    const arquivo = evento.target.files[0];
+    evento.target.value = "";
+    if (!arquivo) return;
+    definirErro("");
+    lerFoto(arquivo)
+      .then(definirFoto)
+      .catch((erroFoto) => definirErro(erroFoto.message));
   }
 
-  // Anexa o rascunho ao pedido, junto com um resumo do que a cliente pediu.
-  function usarNoPedido() {
+  // Anexa ao pedido a foto escolhida, junto com um resumo do que a cliente escreveu.
+  function usarNoPedido(imagem) {
     const resumo = historico
-      .filter((fala) => fala.papel === "cliente")
+      .filter((fala) => fala.papel === "cliente" && fala.texto)
       .map((fala) => fala.texto)
       .join("; ")
       .slice(0, 500);
-    reduzirImagem(imagem).then((reduzida) => aoUsar({ imagem: reduzida, ideia: resumo }));
+    // Para o pedido, uma versão menor basta: o estúdio usa só como referência.
+    reduzirImagem(imagem, 768).then((reduzida) => aoUsar({ imagem: reduzida, ideia: resumo }));
   }
 
   const conversou = historico.some((fala) => fala.papel === "cliente");
@@ -117,7 +110,7 @@ function AssistenteIA({ aoUsar }) {
         <div>
           <p className="assistente-selo">Novo · Assistente com IA</p>
           <h2>Não sabe o que tatuar?</h2>
-          <p>Converse com a nossa assistente: ela ajuda a escolher a ideia e cria um rascunho do desenho.</p>
+          <p>Converse com a nossa assistente: ela ajuda a escolher a ideia e comenta fotos de referência que você enviar.</p>
         </div>
         <button className="botao-principal" type="button" onClick={() => definirAberta(true)}>
           Criar com a IA
@@ -138,10 +131,22 @@ function AssistenteIA({ aoUsar }) {
 
       <ol className="assistente-falas" ref={listaRef} aria-live="polite">
         <li className="fala-ia">
-          Oi! Me conte o que você imagina: um significado, um estilo, um elemento que você gosta. Eu ajudo a transformar em uma ideia de tatuagem.
+          Oi! Me conte o que você imagina ou envie uma foto de referência pelo clipe: uma tatuagem que você viu, um desenho ou o local do corpo. Eu ajudo a transformar em uma ideia de tatuagem.
         </li>
         {historico.map((fala, indice) => (
-          <li key={indice} className={fala.papel === "cliente" ? "fala-cliente" : "fala-ia"}>{fala.texto}</li>
+          <li key={indice} className={fala.papel === "cliente" ? "fala-cliente" : "fala-ia"}>
+            {fala.imagem && (
+              <div className="fala-foto">
+                <button type="button" className="mensagem-foto" onClick={() => definirFotoAberta(fala.imagem)}>
+                  <img src={fala.imagem} alt="Foto de referência enviada para a assistente" />
+                </button>
+                <button type="button" className="botao-usar-foto" onClick={() => usarNoPedido(fala.imagem)}>
+                  Usar no meu pedido
+                </button>
+              </div>
+            )}
+            {fala.texto}
+          </li>
         ))}
         {pensando && <li className="fala-ia pensando">Pensando<span aria-hidden="true">…</span></li>}
       </ol>
@@ -156,11 +161,23 @@ function AssistenteIA({ aoUsar }) {
 
       {erro && <p className="aviso erro" role="alert">{erro}</p>}
 
+      {foto && (
+        <div className="foto-escolhida foto-escolhida-escura">
+          <img src={foto} alt="Foto que será enviada para a assistente" />
+          <span>Foto pronta. Escreva algo, se quiser, e toque em Enviar.</span>
+          <button type="button" className="botao-secundario" onClick={() => definirFoto("")}>Remover</button>
+        </div>
+      )}
+
       {/* Não é um <form>: a assistente fica dentro do formulário do pedido, e formulário dentro de formulário não é permitido. */}
       <div className="assistente-escrever">
+        <input ref={arquivoRef} type="file" accept={TIPOS_ACEITOS} hidden onChange={escolherFoto} />
+        <button type="button" className="botao-anexar" aria-label="Anexar foto de referência" title="Anexar foto" onClick={() => arquivoRef.current?.click()}>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 11.5l-8.5 8.5a5 5 0 0 1-7-7L14 4.5a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7.5" /></svg>
+        </button>
         <textarea
           aria-label="Escreva para a assistente"
-          placeholder="Ex.: quero um girassol pequeno no pulso…"
+          placeholder="Escreva sua ideia…"
           rows={2}
           maxLength={1000}
           value={texto}
@@ -170,25 +187,10 @@ function AssistenteIA({ aoUsar }) {
             if (evento.key === "Enter" && !evento.shiftKey && !window.matchMedia("(pointer: coarse)").matches) enviar(evento);
           }}
         />
-        <button className="botao-principal" type="button" onClick={enviar} disabled={pensando || !texto.trim()}>Enviar</button>
+        <button className="botao-principal" type="button" onClick={enviar} disabled={pensando || (!texto.trim() && !foto)}>Enviar</button>
       </div>
 
-      <div className="assistente-imagem">
-        <button className="botao-secundario" type="button" onClick={gerarImagem} disabled={!conversou || gerandoImagem || pensando}>
-          {gerandoImagem ? "Desenhando… leva alguns segundos" : imagem ? "Gerar outra imagem" : "Gerar imagem da ideia"}
-        </button>
-        {!conversou && <p className="ajuda-campo">Conte sua ideia primeiro para liberar a imagem.</p>}
-        {erroImagem && <p className="aviso erro" role="alert">{erroImagem}</p>}
-        {imagem && (
-          <figure className="rascunho-ia">
-            <img src={imagem} alt="Rascunho de tatuagem criado pela IA a partir da sua ideia" />
-            <figcaption>
-              Rascunho criado pela IA. O tatuador usa como referência e faz o desenho final.
-            </figcaption>
-            <button className="botao-principal" type="button" onClick={usarNoPedido}>Usar no meu pedido</button>
-          </figure>
-        )}
-      </div>
+      {fotoAberta && <VisualizadorFoto foto={fotoAberta} aoFechar={() => definirFotoAberta("")} />}
     </section>
   );
 }

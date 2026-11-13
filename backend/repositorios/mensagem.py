@@ -51,26 +51,29 @@ def inicializar() -> None:
                 )
                 """
             )
+            # Foto anexada à mensagem (data URL), opcional. Acrescentada à tabela que já existe em produção.
+            cursor.execute("ALTER TABLE mensagens ADD COLUMN IF NOT EXISTS imagem TEXT")
             banco.commit()
 
 
 # Grava a mensagem e já devolve o nome e o perfil de quem escreveu, para a tela montar o balão.
 # O WITH (CTE) guarda a linha recém-inserida com um nome, e o SELECT seguinte a junta com o usuário.
-def criar(tatuagem_id: int, autor_id: int, texto: str) -> dict:
+# imagem é opcional: a mensagem pode ter só texto, só foto ou os dois.
+def criar(tatuagem_id: int, autor_id: int, texto: str, imagem: Optional[str] = None) -> dict:
     with closing(_conectar()) as banco:
         with banco.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
                 """
                 WITH nova AS (
-                    INSERT INTO mensagens (tatuagem_id, autor_id, texto)
-                    VALUES (%s, %s, %s)
+                    INSERT INTO mensagens (tatuagem_id, autor_id, texto, imagem)
+                    VALUES (%s, %s, %s, %s)
                     RETURNING *
                 )
                 SELECT nova.*, usuarios.nome AS autor_nome, usuarios.perfil AS autor_perfil
                 FROM nova
                 JOIN usuarios ON usuarios.id = nova.autor_id
                 """,
-                (tatuagem_id, autor_id, texto),
+                (tatuagem_id, autor_id, texto, imagem),
             )
             mensagem = cursor.fetchone()
             banco.commit()
@@ -137,7 +140,10 @@ def listar_nao_lidas(usuario_id: int, perfil: str, cliente_id: Optional[int] = N
                       {filtro_cliente}
                     GROUP BY mensagens.tatuagem_id
                 )
-                SELECT pendentes.*, tatuagens.ideia, ultima.texto AS ultimo_texto, autor.nome AS ultimo_autor
+                SELECT pendentes.*, tatuagens.ideia,
+                       -- Mensagem só com foto não tem texto; o aviso mostra "Enviou uma foto" no lugar.
+                       CASE WHEN ultima.texto = '' THEN 'Enviou uma foto' ELSE ultima.texto END AS ultimo_texto,
+                       autor.nome AS ultimo_autor
                 FROM pendentes
                 JOIN tatuagens ON tatuagens.id = pendentes.tatuagem_id
                 JOIN mensagens AS ultima ON ultima.id = pendentes.ultima_id

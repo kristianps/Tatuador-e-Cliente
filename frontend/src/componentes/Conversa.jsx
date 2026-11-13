@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
 import { enderecoApi } from "../api.js";
+import { TIPOS_ACEITOS, lerFoto } from "../imagens.js";
+import VisualizadorFoto from "./VisualizadorFoto.jsx";
 
 // De quanto em quanto tempo a conversa pergunta à API se chegou mensagem nova.
 // A API roda em funções sem servidor da Vercel, que não mantêm conexão aberta,
@@ -36,6 +38,10 @@ function Conversa({ tatuagemId, usuario, titulo, aoLer }) {
   const [estado, definirEstado] = useState("carregando");
   const [erro, definirErro] = useState("");
   const [enviando, definirEnviando] = useState(false);
+  // Foto escolhida para a próxima mensagem (já reduzida) e a foto aberta em tela cheia.
+  const [foto, definirFoto] = useState("");
+  const [fotoAberta, definirFotoAberta] = useState("");
+  const arquivoRef = useRef(null);
   // useRef guarda um valor que sobrevive entre renderizações sem redesenhar a tela.
   const ultimoIdRef = useRef(0);
   // Até qual mensagem já avisamos a API que foi lida, para não repetir o aviso sem necessidade.
@@ -140,7 +146,8 @@ function Conversa({ tatuagemId, usuario, titulo, aoLer }) {
   function enviar(evento) {
     evento.preventDefault();
     const conteudo = texto.trim();
-    if (!conteudo || enviando) return;
+    // Pode enviar só texto, só foto ou os dois.
+    if ((!conteudo && !foto) || enviando) return;
 
     definirEnviando(true);
     definirErro("");
@@ -148,7 +155,7 @@ function Conversa({ tatuagemId, usuario, titulo, aoLer }) {
     fetch(`${enderecoApi}/tatuagens/${tatuagemId}/mensagens`, {
       method: "POST",
       headers: cabecalhosComToken({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ texto: conteudo }),
+      body: JSON.stringify({ texto: conteudo, imagem: foto || undefined }),
     })
       .then((resposta) => {
         if (!resposta.ok) throw new Error("Não foi possível enviar a mensagem. Tente novamente.");
@@ -157,9 +164,22 @@ function Conversa({ tatuagemId, usuario, titulo, aoLer }) {
       .then((mensagem) => {
         receberMensagens([mensagem]);
         definirTexto("");
+        definirFoto("");
       })
       .catch((erroEnvio) => definirErro(erroEnvio.message))
       .finally(() => definirEnviando(false));
+  }
+
+  // Lê a foto escolhida, reduz o tamanho e deixa pronta para enviar com a próxima mensagem.
+  function escolherFoto(evento) {
+    const arquivo = evento.target.files[0];
+    // Limpa o campo para a mesma foto poder ser escolhida de novo depois.
+    evento.target.value = "";
+    if (!arquivo) return;
+    definirErro("");
+    lerFoto(arquivo)
+      .then(definirFoto)
+      .catch((erroFoto) => definirErro(erroFoto.message));
   }
 
   // Pede à IA três respostas prontas para esta conversa. A pessoa escolhe uma, pode editar e envia.
@@ -218,7 +238,13 @@ function Conversa({ tatuagemId, usuario, titulo, aoLer }) {
                   {mensagem.autor_nome} · {mensagem.autor_perfil === "tatuador" ? "Estúdio" : "Cliente"}
                 </p>
               )}
-              <p className="mensagem-texto">{mensagem.texto}</p>
+              {mensagem.imagem && (
+                // A foto é um botão: tocar abre em tela cheia.
+                <button type="button" className="mensagem-foto" onClick={() => definirFotoAberta(mensagem.imagem)}>
+                  <img src={mensagem.imagem} alt={`Foto enviada por ${mensagem.autor_nome}`} loading="lazy" />
+                </button>
+              )}
+              {mensagem.texto && <p className="mensagem-texto">{mensagem.texto}</p>}
               <time dateTime={mensagem.criada_em}>{formatarHorario(mensagem.criada_em)}</time>
             </li>
           );
@@ -245,7 +271,26 @@ function Conversa({ tatuagemId, usuario, titulo, aoLer }) {
         )}
       </div>
 
+      {foto && (
+        <div className="foto-escolhida">
+          <img src={foto} alt="Foto que será enviada" />
+          <span>Foto pronta para enviar</span>
+          <button type="button" className="botao-secundario" onClick={() => definirFoto("")}>Remover</button>
+        </div>
+      )}
+
       <form className="conversa-formulario" onSubmit={enviar}>
+        {/* O input de arquivo fica escondido; o botão do clipe abre a galeria ou a câmera do celular. */}
+        <input
+          ref={arquivoRef}
+          type="file"
+          accept={TIPOS_ACEITOS}
+          hidden
+          onChange={escolherFoto}
+        />
+        <button type="button" className="botao-anexar" aria-label="Anexar foto" title="Anexar foto" onClick={() => arquivoRef.current?.click()}>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 11.5l-8.5 8.5a5 5 0 0 1-7-7L14 4.5a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7.5" /></svg>
+        </button>
         <textarea
           ref={textoRef}
           aria-label="Escrever mensagem"
@@ -256,10 +301,12 @@ function Conversa({ tatuagemId, usuario, titulo, aoLer }) {
           onChange={(evento) => definirTexto(evento.target.value)}
           onKeyDown={aoDigitar}
         />
-        <button className="botao-principal" type="submit" disabled={enviando || !texto.trim()}>
+        <button className="botao-principal" type="submit" disabled={enviando || (!texto.trim() && !foto)}>
           {enviando ? "Enviando…" : "Enviar"}
         </button>
       </form>
+
+      {fotoAberta && <VisualizadorFoto foto={fotoAberta} aoFechar={() => definirFotoAberta("")} />}
     </section>
   );
 }

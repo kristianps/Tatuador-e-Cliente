@@ -2109,3 +2109,201 @@ a.cartao-cliente-dado { justify-self: start; color: var(--vinho); font-weight: 6
   border-color: rgba(255, 140, 155, 0.45);
   background: rgba(180, 47, 61, 0.28);
 }
+
+/* ======================================================================
+   Organização geral das telas (computador e celular)
+   ====================================================================== */
+
+/* Pedir tatuagem: os campos do pedido ficam num bloco com título, em vez de soltos no fim da página. */
+.detalhes-pedido {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: var(--sombra-moderna);
+}
+.detalhes-pedido-topo h2 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 22px; }
+.detalhes-pedido-topo p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+.detalhes-pedido .linha-campos { align-items: start; }
+.detalhes-pedido .campo-local-corpo { max-width: none; }
+.detalhes-pedido-rodape { display: flex; justify-content: flex-end; padding-top: 4px; border-top: 1px solid var(--borda); }
+.detalhes-pedido-rodape .botao-principal { min-width: 220px; margin-top: 12px; }
+
+@media (min-width: 1000px) {
+  /* A grade antiga de 3 colunas espremia ideia, local, tamanho e envio numa linha só.
+     Agora o formulário é uma coluna, e cada parte ocupa a largura toda. */
+  .painel-pedido .formulario {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    align-items: stretch;
+    gap: 18px;
+  }
+  .detalhes-pedido .linha-campos { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+  .detalhes-pedido .ideia-personalizada .botao-secundario { width: auto; justify-self: start; }
+  .detalhes-pedido-rodape .botao-principal { justify-self: auto; }
+
+  /* Ficha: ideia, local e tamanho em três colunas; antes o tamanho caía para baixo da ideia. */
+  .ficha-simples .resumo-ficha-detalhado { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); }
+}
+
+/* Selo com a quantidade de pedidos na agenda sempre numa linha só. */
+.contador-agenda { white-space: nowrap; }
+
+/* Telas de toque não têm "passar o mouse": sem isto, o efeito fica preso no último botão tocado
+   (o "Descartar pedido" aparecia todo vermelho sem ninguém ter pedido). */
+@media (hover: none) {
+  .botao-perigo:hover:not(:disabled) {
+    color: #7d1d2d;
+    border-color: rgba(125, 29, 45, 0.28);
+    background: rgba(143, 29, 44, 0.04);
+  }
+  .botao-principal:hover:not(:disabled), .botao-secundario:hover, .opcao-etapa:hover { transform: none; }
+}
+
+@media (max-width: 620px) {
+  /* Abas sem quebra de linha; se não couberem, o menu rola para o lado. */
+  .navegacao { overflow-x: auto; scrollbar-width: none; }
+  .navegacao::-webkit-scrollbar { display: none; }
+  .aba { flex: 1 0 auto; padding-inline: 10px; white-space: nowrap; }
+
+  .detalhes-pedido { padding: 16px 14px; }
+  .detalhes-pedido-rodape .botao-principal { width: 100%; min-width: 0; }
+
+  /* Na agenda, "Abrir ficha" é a ação principal; "Descartar pedido" apaga o pedido e fica discreto,
+     como um link, para não ser tocado por engano. */
+  .acoes-agenda .botao-perigo {
+    min-height: 44px;
+    border: 0;
+    background: none;
+    font-size: 13px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .acoes-agenda .botao-perigo:hover:not(:disabled) { color: #7d1d2d; background: none; }
+}
+
+/* Dentro do bloco de detalhes, o botão da ideia livre não precisa da divisória que tinha quando ficava solto. */
+.detalhes-pedido .ideia-personalizada { margin: 0; padding: 0; border: 0; }
+
+/* Celulares bem estreitos (até 380 px): abas mais justas, para a de Mensagens e o contador caberem na tela. */
+@media (max-width: 380px) {
+  .aba { padding-inline: 7px; font-size: 12px; }
+  .contador { margin-left: 4px; }
+}
+
+/* ======================================================================
+   Fotos anexadas na conversa e na assistente
+   ====================================================================== */
+
+/* Botão do clipe, ao lado da caixa de texto. */
+.botao-anexar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  color: var(--muted);
+  background: #fff;
+  cursor: pointer;
+}
+.botao-anexar:hover { color: var(--vinho); border-color: rgba(143, 29, 44, 0.45); }
+.botao-anexar svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.assistente-ia .botao-anexar { align-self: stretch; height: auto; min-height: 44px; border-color: rgba(232, 180, 187, 0.35); color: #f7f2ee; background: rgba(255, 255, 255, 0.08); }
+.assistente-ia .botao-anexar:hover { color: #fff; background: rgba(255, 255, 255, 0.16); }
+
+/* Prévia da foto escolhida, antes de enviar. */
+.foto-escolhida {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+.foto-escolhida img { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; }
+.foto-escolhida span { color: var(--muted); font-size: 13px; }
+.foto-escolhida-escura { border-color: rgba(232, 180, 187, 0.3); background: rgba(255, 255, 255, 0.06); }
+.foto-escolhida-escura span { color: #d5c9c2; }
+
+/* Foto dentro do balão: é um botão que abre a foto em tela cheia. */
+.mensagem-foto {
+  display: block;
+  width: 100%;
+  margin: 2px 0 6px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  cursor: zoom-in;
+}
+.mensagem-foto img { display: block; width: 100%; max-width: 260px; max-height: 260px; object-fit: cover; border-radius: 10px; }
+.mensagem .mensagem-foto img { min-width: 160px; }
+
+/* Na assistente, a foto da cliente vem com o botão de anexar ao pedido. */
+.fala-foto { display: grid; gap: 6px; margin-bottom: 6px; }
+.botao-usar-foto {
+  justify-self: start;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.botao-usar-foto:hover { background: rgba(255, 255, 255, 0.22); }
+
+/* Foto em tela cheia, por cima de tudo, com fundo escuro. */
+.visualizador-foto {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(10, 9, 10, 0.88);
+  cursor: zoom-out;
+}
+.visualizador-foto img {
+  max-width: min(100%, 1100px);
+  max-height: 100%;
+  border-radius: 12px;
+  object-fit: contain;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  cursor: default;
+}
+.fechar-visualizador {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@media (pointer: coarse) {
+  .botao-usar-foto { min-height: 44px; }
+}
+
+@media (max-width: 620px) {
+  .foto-escolhida { grid-template-columns: 48px minmax(0, 1fr); }
+  .foto-escolhida img { width: 48px; height: 48px; }
+  .foto-escolhida .botao-secundario { grid-column: 1 / -1; }
+  .visualizador-foto { padding: 12px; }
+}

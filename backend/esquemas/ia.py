@@ -1,12 +1,27 @@
-from typing import List, Literal
+from typing import List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from esquemas.imagem import TAMANHO_MAXIMO_IMAGEM, conferir_imagem
 
 
 # Uma fala da conversa com a assistente. Literal aceita só os dois valores listados.
+# A fala da cliente pode trazer uma foto (referência, desenho ou local do corpo) para a IA analisar.
 class FalaAssistente(BaseModel):
     papel: Literal["cliente", "assistente"]
-    texto: str = Field(min_length=1, max_length=1500)
+    texto: str = Field(default="", max_length=1500)
+    imagem: Optional[str] = Field(default=None, max_length=TAMANHO_MAXIMO_IMAGEM)
+
+    _conferir_imagem = field_validator("imagem")(conferir_imagem)
+
+    # model_validator roda depois de todos os campos: confere o conjunto, e não um campo só.
+    @model_validator(mode="after")
+    def conferir_conteudo(self):
+        if not self.texto.strip() and not self.imagem:
+            raise ValueError("Cada fala precisa ter texto ou foto.")
+        if self.imagem and self.papel != "cliente":
+            raise ValueError("Só a cliente envia fotos.")
+        return self
 
 
 # A tela manda a conversa inteira a cada pergunta, porque a IA não guarda memória entre uma chamada e outra.

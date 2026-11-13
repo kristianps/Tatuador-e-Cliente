@@ -29,8 +29,8 @@ function ImagemIA({ tatuagemId }) {
 
   return (
     <figure className="imagem-ia-pedido">
-      <img src={imagem} alt="Rascunho da tatuagem criado com a IA" loading="lazy" />
-      <figcaption>Rascunho criado com a IA</figcaption>
+      <img src={imagem} alt="Imagem de referência anexada ao pedido" loading="lazy" />
+      <figcaption>Imagem de referência do pedido</figcaption>
     </figure>
   );
 }

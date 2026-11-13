@@ -150,7 +150,10 @@ function Clientes() {
         <section className="bloco-lista-clientes" aria-labelledby="titulo-lista-clientes">
           <div className="cabecalho-lista-clientes">
             <h2 id="titulo-lista-clientes">Clientes cadastradas</h2>
-            <span className="selo-contagem">{clientes.length} no total · {presenciais} presenciais</span>
+            {/* A contagem só aparece depois que a lista chega, para não mostrar "0" enquanto carrega. */}
+            {estadoLista === "pronto" && (
+              <span className="selo-contagem">{clientes.length} no total · {presenciais} presenciais</span>
+            )}
           </div>
 
           <label className="busca-agenda">

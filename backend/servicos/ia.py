@@ -21,7 +21,8 @@ Seu papel é ajudar a cliente a escolher uma tatuagem antes de fazer o pedido.
 - Responda sempre em português do Brasil, em tom acolhedor e direto, com no máximo 120 palavras.
 - Pergunte, aos poucos, o que importa: o significado, o estilo (fineline, old school, blackwork, realismo, aquarela, geométrico), o local do corpo e o tamanho aproximado em centímetros.
 - Sugira de 2 a 3 ideias concretas e curtas quando já souber o suficiente.
-- Quando a ideia estiver clara, diga que ela pode tocar em "Gerar imagem" para ver um rascunho.
+- Se a cliente enviar uma foto (uma tatuagem de referência, um desenho ou o local do corpo), descreva em poucas palavras o que vê e sugira como adaptar a ideia para tatuagem. Não tente identificar pessoas pela foto.
+- Quando a ideia estiver clara, diga que ela pode tocar em "Usar no meu pedido" embaixo da foto, ou descrever a ideia no pedido.
 - Não informe preço, prazo ou agenda: isso é combinado com o estúdio.
 - Não dê orientação médica; para dúvidas de pele ou saúde, oriente a conversar com o tatuador.
 - Use texto simples, sem títulos nem tabelas."""
@@ -54,7 +55,27 @@ def _post_json(url: str, cabecalhos: dict, corpo: dict, tempo: int) -> Optional[
         return None
 
 
-# Texto pelo Google AI Studio. historico é uma lista de {"papel": "cliente" ou "assistente", "texto": ...}.
+# Separa um data URL ("data:image/jpeg;base64,AAAA") no tipo da imagem e no conteúdo em base64.
+def _partes_da_imagem(data_url: str) -> Tuple[str, str]:
+    cabecalho, conteudo = data_url.split(",", 1)
+    return cabecalho[len("data:"):].split(";")[0], conteudo
+
+
+# Só a foto mais recente vai para a IA; as anteriores viram uma observação no texto.
+# Assim cada pergunta não reenvia todas as fotos da conversa, o que deixaria a chamada lenta e pesada.
+def _manter_ultima_imagem(historico: list) -> list:
+    indices = [i for i, item in enumerate(historico) if item.get("imagem")]
+    ultima = indices[-1] if indices else None
+    resultado = []
+    for i, item in enumerate(historico):
+        if item.get("imagem") and i != ultima:
+            texto = (item.get("texto") or "").strip()
+            item = {**item, "imagem": None, "texto": f"{texto} (a cliente tinha enviado uma foto antes)".strip()}
+        resultado.append(item)
+    return resultado
+
+
+# Texto pelo Google AI Studio. historico é uma lista de {"papel": "cliente" ou "assistente", "texto": ..., "imagem": ...}.
 def _texto_google(instrucao: str, historico: list, saida_json: bool) -> Optional[str]:
     if not configuracao.GOOGLE_API_KEY:
         return None
@@ -65,7 +86,7 @@ def _texto_google(instrucao: str, historico: list, saida_json: bool) -> Optional
         "systemInstruction": {"parts": [{"text": instrucao}]},
         # O Google chama a IA de "model" e a pessoa de "user".
         "contents": [
-            {"role": "model" if item["papel"] == "assistente" else "user", "parts": [{"text": item["texto"]}]}
+            {"role": "model" if item["papel"] == "assistente" else "user", "parts": _partes_google(item)}
             for item in historico
         ],
         "generationConfig": config,
@@ -81,12 +102,33 @@ def _texto_google(instrucao: str, historico: list, saida_json: bool) -> Optional
         return None
 
 
+# Monta as partes de uma fala para o Google: o texto e, se houver, a foto (inlineData = imagem em base64).
+def _partes_google(item: dict) -> list:
+    partes = []
+    if item.get("texto"):
+        partes.append({"text": item["texto"]})
+    if item.get("imagem"):
+        tipo, conteudo = _partes_da_imagem(item["imagem"])
+        partes.append({"inlineData": {"mimeType": tipo, "data": conteudo}})
+    return partes
+
+
+# Monta o conteúdo de uma fala para a OpenRouter: texto simples, ou uma lista com texto e imagem.
+def _conteudo_openrouter(item: dict):
+    if not item.get("imagem"):
+        return item["texto"]
+    conteudo = [{"type": "image_url", "image_url": {"url": item["imagem"]}}]
+    if item.get("texto"):
+        conteudo.insert(0, {"type": "text", "text": item["texto"]})
+    return conteudo
+
+
 # Texto pela OpenRouter, usada quando o Google falha.
 def _texto_openrouter(instrucao: str, historico: list) -> Optional[str]:
     if not configuracao.OPENROUTER_API_KEY:
         return None
     mensagens = [{"role": "system", "content": instrucao}] + [
-        {"role": "assistant" if item["papel"] == "assistente" else "user", "content": item["texto"]}
+        {"role": "assistant" if item["papel"] == "assistente" else "user", "content": _conteudo_openrouter(item)}
         for item in historico
     ]
     corpo = {"model": configuracao.OPENROUTER_MODELO_TEXTO, "max_tokens": 800, "messages": mensagens}
@@ -162,7 +204,7 @@ def conversar(usuario: dict, historico: list) -> Tuple[Optional[str], Optional[s
     if motivo:
         return None, motivo
 
-    resposta = _gerar_texto(INSTRUCAO_ASSISTENTE, historico)
+    resposta = _gerar_texto(INSTRUCAO_ASSISTENTE, _manter_ultima_imagem(historico))
     if resposta is None:
         return None, "A assistente está indisponível agora. Tente de novo em instantes."
 
@@ -177,7 +219,7 @@ def gerar_imagem(usuario: dict, historico: list) -> Tuple[Optional[str], Optiona
         return None, motivo
 
     # Junta as falas da cliente e a última sugestão da assistente, que já resume a ideia.
-    falas_cliente = [item["texto"] for item in historico if item["papel"] == "cliente"]
+    falas_cliente = [item["texto"] for item in historico if item["papel"] == "cliente" and item["texto"]]
     sugestoes = [item["texto"] for item in historico if item["papel"] == "assistente"]
     ideia = "\n".join(falas_cliente[-6:])
     if sugestoes:
@@ -206,8 +248,10 @@ def sugerir_respostas(usuario: dict, tatuagem_id: int) -> Tuple[Optional[list], 
         return None, True, motivo
 
     ultimas = repositorio_mensagem.listar_por_tatuagem(tatuagem_id)[-12:]
+    # Mensagem só com foto aparece para a IA como "(enviou uma foto)".
     linhas = [
-        f"{'Estúdio' if m['autor_perfil'] == GRUPO_TATUADOR else 'Cliente'} ({m['autor_nome']}): {m['texto']}"
+        f"{'Estúdio' if m['autor_perfil'] == GRUPO_TATUADOR else 'Cliente'} ({m['autor_nome']}): "
+        + (m["texto"] or "") + (" (enviou uma foto)" if m.get("imagem") else "")
         for m in ultimas
     ]
     contexto = (

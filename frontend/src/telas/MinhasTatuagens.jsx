@@ -5,6 +5,18 @@ import ImagemIA from "../componentes/ImagemIA.jsx";
 
 const chaveCelebracoes = (clienteId) => `pereiratatto-finalizadas-${clienteId}`;
 
+// Nomes dos passos como a cliente lê, em vez dos valores internos que a API guarda.
+function nomePasso(tipo) {
+  const nomes = {
+    "pedido recebido": "Pedido recebido",
+    "desenho aprovado": "Desenho aprovado",
+    sessão: "Sessão",
+    finalização: "Tatuagem finalizada",
+    retoque: "Retoque",
+  };
+  return nomes[tipo] || tipo;
+}
+
 // Mostra os pedidos da cliente e o histórico da tatuagem que ela abrir.
 function MinhasTatuagens({ perfil, aoAbrirConversa }) {
   // useState guarda a lista, o histórico selecionado e os estados de carregamento.
@@ -216,8 +228,9 @@ function MinhasTatuagens({ perfil, aoAbrirConversa }) {
               <ol className="lista-passos">
                 {passos.map((passo) => (
                   <li key={passo.id}>
-                    <strong>{passo.tipo}</strong>
-                    <time dateTime={passo.data}>{passo.data}</time>
+                    <strong>{nomePasso(passo.tipo)}</strong>
+                    {/* T12:00 evita que o fuso horário mude a data para o dia anterior. */}
+                    <time dateTime={passo.data}>{new Date(`${passo.data}T12:00:00`).toLocaleDateString("pt-BR")}</time>
                     {passo.observacao && <p>{passo.observacao}</p>}
                   </li>
                 ))}
