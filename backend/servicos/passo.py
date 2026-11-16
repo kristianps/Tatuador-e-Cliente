@@ -49,22 +49,28 @@ def registrar_passo(
     if tipo not in etapas_por_tipo:
         return None, tatuagem, "Escolha uma etapa válida para este pedido."
 
-    # O retoque só existe para tatuagem já finalizada: antes disso, ainda é sessão.
-    if tipo == "retoque" and tatuagem["etapa"] not in ("finalizada", "retoque feito"):
-        return None, tatuagem, "O retoque só pode ser registrado depois que a tatuagem estiver finalizada."
+    # Impede saltos que deixariam o histórico fora da sequência do fluxo.
+    etapas_permitidas = {
+        "pedido recebido": {"pedida"},
+        "desenho aprovado": {"pedida", "desenho aprovado"},
+        "sessão": {"desenho aprovado", "em sessões"},
+        "finalização": {"em sessões", "finalizada"},
+        "retoque": {"finalizada", "retoque feito"},
+    }
+    if tatuagem["etapa"] not in etapas_permitidas[tipo]:
+        return None, tatuagem, "Esta etapa não pode ser registrada a partir da etapa atual."
 
-    # Cada registro atualiza individualmente a etapa selecionada pelo tatuador.
-
-    passo = repositorio_passo.criar(
-        {
-            "tatuagem_id": tatuagem_id,
-            "tipo": tipo,
-            "data": dados["data"],
-            "observacao": dados.get("observacao", ""),
-        }
-    )
-    tatuagem_atualizada = repositorio_tatuagem.atualizar_etapa(
-        tatuagem_id, etapas_por_tipo[tipo]
-    )
+    try:
+        passo, tatuagem_atualizada = repositorio_passo.criar_e_atualizar_etapa(
+            {
+                "tatuagem_id": tatuagem_id,
+                "tipo": tipo,
+                "data": dados["data"],
+                "observacao": dados.get("observacao", ""),
+            },
+            etapas_por_tipo[tipo],
+        )
+    except LookupError:
+        return None, None, None
     passo_com_etapa = {**passo, "etapa_atualizada": tatuagem_atualizada["etapa"]}
     return passo_com_etapa, tatuagem_atualizada, None

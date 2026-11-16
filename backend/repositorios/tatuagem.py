@@ -42,6 +42,17 @@ def inicializar() -> None:
                 """
             )
             cursor.execute("ALTER TABLE imagens_tatuagem ENABLE ROW LEVEL SECURITY")
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS propostas_ia_tatuagem (
+                    id SERIAL PRIMARY KEY,
+                    tatuagem_id INTEGER NOT NULL REFERENCES tatuagens(id) ON DELETE CASCADE,
+                    imagem TEXT NOT NULL,
+                    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            cursor.execute("ALTER TABLE propostas_ia_tatuagem ENABLE ROW LEVEL SECURITY")
             banco.commit()
 
 
@@ -66,6 +77,32 @@ def buscar_imagem(tatuagem_id: int) -> Optional[str]:
             cursor.execute("SELECT imagem FROM imagens_tatuagem WHERE tatuagem_id = %s", (tatuagem_id,))
             linha = cursor.fetchone()
             return linha[0] if linha is not None else None
+
+
+def salvar_propostas_ia(tatuagem_id: int, imagens: list[str]) -> None:
+    if not imagens:
+        return
+    with closing(_conectar()) as banco:
+        with banco.cursor() as cursor:
+            cursor.executemany(
+                "INSERT INTO propostas_ia_tatuagem (tatuagem_id, imagem) VALUES (%s, %s)",
+                [(tatuagem_id, imagem) for imagem in imagens],
+            )
+            banco.commit()
+
+
+def listar_propostas_ia(tatuagem_id: int) -> list[str]:
+    with closing(_conectar()) as banco:
+        with banco.cursor() as cursor:
+            cursor.execute(
+                "SELECT imagem FROM propostas_ia_tatuagem WHERE tatuagem_id = %s ORDER BY id",
+                (tatuagem_id,),
+            )
+            imagens = [linha[0] for linha in cursor.fetchall()]
+    imagem_selecionada = buscar_imagem(tatuagem_id)
+    if imagem_selecionada and imagem_selecionada not in imagens:
+        imagens.append(imagem_selecionada)
+    return imagens
 
 
 def criar(dados: dict) -> dict:

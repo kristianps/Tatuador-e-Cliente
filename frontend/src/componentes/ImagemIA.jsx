@@ -5,19 +5,19 @@ import { enderecoApi } from "../api.js";
 // Mostra o rascunho criado com a IA para um pedido, se houver. Sem imagem, não mostra nada.
 // Fica num componente à parte porque a imagem é buscada separada da lista de pedidos, que precisa ser leve.
 function ImagemIA({ tatuagemId }) {
-  const [imagem, definirImagem] = useState("");
+  const [imagens, definirImagens] = useState([]);
 
   useEffect(() => {
     let ativo = true;
-    definirImagem("");
+    definirImagens([]);
     const token = localStorage.getItem("pereiratatto-token");
-    fetch(`${enderecoApi}/tatuagens/${tatuagemId}/imagem-ia`, {
+    fetch(`${enderecoApi}/tatuagens/${tatuagemId}/imagens-ia`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       // 404 é o caso normal de pedido sem imagem; não é erro para a tela.
       .then((resposta) => (resposta.ok ? resposta.json() : null))
       .then((dados) => {
-        if (ativo && dados) definirImagem(dados.imagem);
+        if (ativo && dados) definirImagens(dados.imagens || []);
       })
       .catch(() => {});
     return () => {
@@ -25,13 +25,19 @@ function ImagemIA({ tatuagemId }) {
     };
   }, [tatuagemId]);
 
-  if (!imagem) return null;
+  if (!imagens.length) return null;
 
   return (
-    <figure className="imagem-ia-pedido">
-      <img src={imagem} alt="Imagem de referência anexada ao pedido" loading="lazy" />
-      <figcaption>Imagem de referência do pedido</figcaption>
-    </figure>
+    <div className="propostas-ia-pedido">
+      <h3>Propostas criadas com IA</h3>
+      <p>Rascunhos para comparação e avaliação do tatuador.</p>
+      {imagens.map((imagem, indice) => (
+        <figure className="imagem-ia-pedido" key={indice}>
+          <img src={imagem} alt={`Proposta ${indice + 1} de referência do pedido`} loading="lazy" />
+          <figcaption>Proposta {indice + 1} · referência para revisão do tatuador</figcaption>
+        </figure>
+      ))}
+    </div>
   );
 }
 

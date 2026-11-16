@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -12,6 +12,7 @@ class TatuagemEntrada(BaseModel):
     tamanho_cm: int = Field(ge=1, le=100)
     # Rascunho criado com a IA, opcional. Vem como data URL; o limite evita guardar arquivos enormes.
     imagem_ia: Optional[str] = Field(default=None, max_length=3_000_000)
+    imagens_ia: List[str] = Field(default_factory=list, max_length=3)
 
     # Aceita só imagens PNG, JPEG ou WebP em base64, para ninguém guardar outro tipo de conteúdo.
     @field_validator("imagem_ia")
@@ -21,6 +22,14 @@ class TatuagemEntrada(BaseModel):
         if valor is not None and not valor.startswith(tipos):
             raise ValueError("A imagem precisa ser PNG, JPEG ou WebP.")
         return valor
+
+    @field_validator("imagens_ia")
+    @classmethod
+    def conferir_imagens_ia(cls, valores):
+        tipos = ("data:image/png;base64,", "data:image/jpeg;base64,", "data:image/webp;base64,")
+        if any(len(valor) > 3_000_000 or not valor.startswith(tipos) for valor in valores):
+            raise ValueError("Cada proposta precisa ser uma imagem PNG, JPEG ou WebP de até 3 MB.")
+        return valores
 
 
 # Define os dados que a API devolve ao mostrar uma tatuagem.
@@ -37,3 +46,7 @@ class TatuagemSaida(BaseModel):
 # Imagem da IA de um pedido, buscada à parte por ser grande.
 class ImagemTatuagemSaida(BaseModel):
     imagem: str
+
+
+class PropostasImagemTatuagemSaida(BaseModel):
+    imagens: List[str]

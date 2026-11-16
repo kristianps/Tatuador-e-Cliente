@@ -10,6 +10,7 @@ def criar_tatuagem(dados: dict) -> dict:
     tatuagem = repositorio_tatuagem.criar(dados)
     if dados.get("imagem_ia"):
         repositorio_tatuagem.salvar_imagem(tatuagem["id"], dados["imagem_ia"])
+    repositorio_tatuagem.salvar_propostas_ia(tatuagem["id"], dados.get("imagens_ia", []))
     return tatuagem
 
 
@@ -22,6 +23,13 @@ def buscar_imagem(tatuagem_id: int, usuario: dict) -> Optional[str]:
     if usuario["perfil"] != "tatuador" and tatuagem["cliente_id"] != usuario["id"]:
         return None
     return repositorio_tatuagem.buscar_imagem(tatuagem_id)
+
+
+def listar_propostas_ia(tatuagem_id: int, usuario: dict) -> Optional[list[str]]:
+    tatuagem = repositorio_tatuagem.buscar_por_id(tatuagem_id)
+    if tatuagem is None or (usuario["perfil"] != "tatuador" and tatuagem["cliente_id"] != usuario["id"]):
+        return None
+    return repositorio_tatuagem.listar_propostas_ia(tatuagem_id)
 
 
 # Busca uma tatuagem para a rota responder com os dados ou com status 404.

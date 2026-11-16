@@ -150,14 +150,18 @@ def _gerar_texto(instrucao: str, historico: list, saida_json: bool = False) -> O
 
 
 # Imagem pela OpenRouter, que devolve a imagem pronta como data URL.
-def _imagem_openrouter(prompt: str) -> Optional[str]:
+def _imagem_openrouter(prompt: str, referencia: Optional[str] = None) -> Optional[str]:
     if not configuracao.OPENROUTER_API_KEY:
         return None
     corpo = {
         "model": configuracao.OPENROUTER_MODELO_IMAGEM,
         # modalities pede ao modelo que responda com imagem, além de texto.
         "modalities": ["image", "text"],
-        "messages": [{"role": "user", "content": prompt}],
+        "messages": [{
+            "role": "user",
+            "content": ([{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": referencia}}]
+                        if referencia else prompt),
+        }],
     }
     resposta = _post_json(
         "https://openrouter.ai/api/v1/chat/completions",
@@ -173,11 +177,15 @@ def _imagem_openrouter(prompt: str) -> Optional[str]:
 
 
 # Imagem pelo Google, que devolve o tipo e o conteúdo em base64; aqui viram um data URL.
-def _imagem_google(prompt: str) -> Optional[str]:
+def _imagem_google(prompt: str, referencia: Optional[str] = None) -> Optional[str]:
     if not configuracao.GOOGLE_API_KEY:
         return None
+    partes = [{"text": prompt}]
+    if referencia:
+        tipo, conteudo = _partes_da_imagem(referencia)
+        partes.append({"inlineData": {"mimeType": tipo, "data": conteudo}})
     corpo = {
-        "contents": [{"parts": [{"text": prompt}]}],
+        "contents": [{"parts": partes}],
         "generationConfig": {"responseModalities": ["IMAGE", "TEXT"]},
     }
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{configuracao.GOOGLE_MODELO_IMAGEM}:generateContent"
@@ -213,7 +221,7 @@ def conversar(usuario: dict, historico: list) -> Tuple[Optional[str], Optional[s
 
 
 # Gera o rascunho da tatuagem a partir do que a cliente disse na conversa com a assistente.
-def gerar_imagem(usuario: dict, historico: list) -> Tuple[Optional[str], Optional[str]]:
+def gerar_imagem(usuario: dict, historico: list, contexto: Optional[dict] = None) -> Tuple[Optional[str], Optional[str]]:
     motivo = _motivo_limite(usuario, "imagem")
     if motivo:
         return None, motivo
@@ -224,9 +232,22 @@ def gerar_imagem(usuario: dict, historico: list) -> Tuple[Optional[str], Optiona
     ideia = "\n".join(falas_cliente[-6:])
     if sugestoes:
         ideia += f"\nÚltima sugestão da assistente: {sugestoes[-1]}"
-    prompt = f"{INSTRUCAO_IMAGEM}\n{ideia}"
+    contexto = contexto or {}
+    detalhes = [f"Ideia: {contexto.get('ideia', '').strip() or ideia}"]
+    if sugestoes:
+        detalhes.append(f"Direção criativa discutida com a assistente: {sugestoes[-1]}")
+    if contexto.get("local_corpo"):
+        detalhes.append(f"Local do corpo: {contexto['local_corpo']}")
+    if contexto.get("tamanho_cm"):
+        detalhes.append(f"Tamanho aproximado: {contexto['tamanho_cm']} cm")
+    if contexto.get("ajustes"):
+        detalhes.append(f"Ajustes solicitados pela cliente: {contexto['ajustes'].strip()}")
+    detalhes.append("Crie uma composição adequada à área e ao tamanho indicados, com formas legíveis em escala pequena.")
+    detalhes.append("Use a foto de referência enviada pela cliente como inspiração visual, sem copiar marcas d'água ou elementos alheios à ideia.")
+    prompt = f"{INSTRUCAO_IMAGEM}\n" + "\n".join(detalhes)
 
-    imagem = _imagem_openrouter(prompt) or _imagem_google(prompt)
+    referencia = next((item.get("imagem") for item in reversed(historico) if item.get("imagem")), None)
+    imagem = _imagem_openrouter(prompt, referencia) or _imagem_google(prompt, referencia)
     if imagem is None:
         return None, "A geração de imagem está indisponível agora. A conversa com a assistente continua funcionando."
 

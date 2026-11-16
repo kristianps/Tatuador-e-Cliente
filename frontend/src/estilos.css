@@ -2040,6 +2040,7 @@ a.cartao-cliente-dado { justify-self: start; color: var(--vinho); font-weight: 6
   background: #fff;
 }
 .imagem-ia-pedido figcaption { color: var(--muted); font-size: 12px; }
+.propostas-ia-pedido > p { margin: 0; color: var(--muted); font-size: 13px; }
 
 /* Sugestões de resposta da IA, logo acima da caixa de mensagem. */
 .sugestoes-ia { display: grid; gap: 8px; }

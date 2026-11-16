@@ -32,6 +32,7 @@ function PedirTatuagem({ perfil, figuras }) {
   const [mostrarIdeiaLivre, definirMostrarIdeiaLivre] = useState(false);
   // Rascunho criado com a assistente de IA e anexado ao pedido (data URL), ou vazio.
   const [imagemIa, definirImagemIa] = useState("");
+  const [imagensIa, definirImagensIa] = useState([]);
   // Atualiza o passo em destaque conforme a cliente escolhe uma referência, a região do corpo e o tamanho.
   const passoAtual = localFinal && tamanhoCm
     ? 3
@@ -40,8 +41,9 @@ function PedirTatuagem({ perfil, figuras }) {
       : 1;
 
   // Recebe da assistente a foto de referência e o resumo da ideia, e preenche o pedido com eles.
-  function usarIdeiaDaIa({ imagem, ideia }) {
+  function usarIdeiaDaIa({ imagem, ideia, imagens = [] }) {
     definirImagemIa(imagem);
+    definirImagensIa(imagens);
     // Só as palavras da cliente: o pedido já é enviado como "O que vem à mente da cliente: …".
     definirIdeiaLivre(ideia);
     // Abre o campo da ideia livre para a cliente ver e ajustar o texto antes de enviar.
@@ -103,6 +105,7 @@ function PedirTatuagem({ perfil, figuras }) {
         tamanho_cm: Number(tamanhoCm),
         // undefined some do JSON, então pedidos sem imagem continuam iguais.
         imagem_ia: imagemIa || undefined,
+        imagens_ia: imagensIa.length ? imagensIa : undefined,
       }),
     })
       .then((resposta) => {
@@ -121,6 +124,7 @@ function PedirTatuagem({ perfil, figuras }) {
         definirLocalOutro("");
         definirTamanhoCm("");
         definirImagemIa("");
+        definirImagensIa([]);
       })
       .catch((erro) => {
         definirEstado("erro");
@@ -177,7 +181,7 @@ function PedirTatuagem({ perfil, figuras }) {
           </p>
         </fieldset>
 
-        <AssistenteIA aoUsar={usarIdeiaDaIa} />
+        <AssistenteIA aoUsar={usarIdeiaDaIa} localCorpo={localFinal} tamanhoCm={tamanhoCm} />
 
         {/* Tudo o que a cliente preenche fica num bloco só, com título, em vez de solto no fim da página. */}
         <section className="detalhes-pedido" aria-labelledby="titulo-detalhes-pedido">
@@ -189,8 +193,8 @@ function PedirTatuagem({ perfil, figuras }) {
           {imagemIa && (
             <div className="rascunho-anexado">
               <img src={imagemIa} alt="Imagem de referência anexada ao pedido" />
-              <p>Imagem de referência anexada. O estúdio vai recebê-la junto com o pedido.</p>
-              <button className="botao-secundario" type="button" onClick={() => definirImagemIa("")}>Remover</button>
+              <p>Rascunho anexado ao pedido. O tatuador avaliará a proposta antes de aprovar o desenho.</p>
+              <button className="botao-secundario" type="button" onClick={() => { definirImagemIa(""); definirImagensIa([]); }}>Remover</button>
             </div>
           )}
 

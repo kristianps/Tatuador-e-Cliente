@@ -48,7 +48,11 @@ def gerar_imagem(
     if not any(fala.papel == "cliente" and fala.texto.strip() for fala in dados.historico):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Conte sua ideia antes de gerar a imagem.")
 
-    imagem, motivo = servico_ia.gerar_imagem(usuario, [fala.model_dump() for fala in dados.historico])
+    imagem, motivo = servico_ia.gerar_imagem(
+        usuario,
+        [fala.model_dump() for fala in dados.historico],
+        dados.model_dump(exclude={"historico"}),
+    )
     if motivo:
         _recusar(motivo)
     return {"imagem": imagem}

@@ -3,7 +3,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 
 # Os esquemas Pydantic validam a entrada e documentam os campos de saída.
-from esquemas.tatuagem import ImagemTatuagemSaida, TatuagemEntrada, TatuagemSaida
+from esquemas.tatuagem import ImagemTatuagemSaida, PropostasImagemTatuagemSaida, TatuagemEntrada, TatuagemSaida
 from servicos import tatuagem as servico_tatuagem
 from servicos import usuario as servico_usuario
 
@@ -55,6 +55,17 @@ def mostrar_imagem_ia(
             detail="Este pedido não tem imagem da IA.",
         )
     return {"imagem": imagem}
+
+
+@router.get("/{tatuagem_id}/imagens-ia", response_model=PropostasImagemTatuagemSaida)
+def listar_propostas_ia(
+    tatuagem_id: int,
+    usuario: dict = Depends(servico_usuario.requerer_perfil(GRUPOS_PERMITIDOS)),
+):
+    imagens = servico_tatuagem.listar_propostas_ia(tatuagem_id, usuario)
+    if imagens is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tatuagem não encontrada.")
+    return {"imagens": imagens}
 
 
 # Cria um pedido com a etapa inicial e responde com status 201 por ser um novo recurso.

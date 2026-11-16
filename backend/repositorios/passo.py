@@ -49,6 +49,35 @@ def criar(dados: dict) -> dict:
             return dict(passo)
 
 
+def criar_e_atualizar_etapa(dados: dict, nova_etapa: str) -> tuple[dict, dict]:
+    """Grava o passo e atualiza a tatuagem na mesma transação."""
+    data = dados["data"].isoformat() if hasattr(dados["data"], "isoformat") else str(dados["data"])
+    with closing(_conectar()) as banco:
+        try:
+            with banco.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO passos (tatuagem_id, tipo, data, observacao)
+                    VALUES (%s, %s, %s, %s)
+                    RETURNING *
+                    """,
+                    (dados["tatuagem_id"], dados["tipo"], data, dados.get("observacao", "")),
+                )
+                passo = cursor.fetchone()
+                cursor.execute(
+                    "UPDATE tatuagens SET etapa = %s WHERE id = %s RETURNING *",
+                    (nova_etapa, dados["tatuagem_id"]),
+                )
+                tatuagem = cursor.fetchone()
+                if tatuagem is None:
+                    raise LookupError("Tatuagem não encontrada durante o registro do passo.")
+            banco.commit()
+            return dict(passo), dict(tatuagem)
+        except Exception:
+            banco.rollback()
+            raise
+
+
 def listar_por_tatuagem(tatuagem_id: int) -> list:
     with closing(_conectar()) as banco:
         with banco.cursor(cursor_factory=RealDictCursor) as cursor:
