@@ -2,16 +2,13 @@ from typing import Optional, Tuple
 
 from repositorios import passo as repositorio_passo
 from repositorios import tatuagem as repositorio_tatuagem
+from servicos.tatuagem import pode_ver
 
 
-# Lista o histórico somente se a tatuagem existir, para a rota distinguir o 404.
-def listar_passos(tatuagem_id: int, cliente_id: Optional[int] = None) -> Optional[list]:
-    tatuagem = repositorio_tatuagem.buscar_por_id(tatuagem_id)
-    if tatuagem is None:
-        return None
-
-    # Restringe a consulta da cliente às tatuagens associadas ao perfil informado.
-    if cliente_id is not None and tatuagem["cliente_id"] != cliente_id:
+# Lista o histórico somente se a tatuagem existir e a pessoa puder vê-la, para a rota responder 404.
+# A regra usa quem está logado (o token), e não um cliente_id que a tela poderia trocar.
+def listar_passos(tatuagem_id: int, usuario: dict) -> Optional[list]:
+    if not pode_ver(repositorio_tatuagem.buscar_por_id(tatuagem_id), usuario):
         return None
 
     return repositorio_passo.listar_por_tatuagem(tatuagem_id)

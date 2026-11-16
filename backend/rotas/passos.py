@@ -12,17 +12,19 @@ router = APIRouter(tags=["Passos"])
 # NOVO: um grupo é a coleção de perfis autorizados para uma determinada área do sistema.
 # Neste projeto, cliente e tatuador têm acesso total aos fluxos de tatuagem e histórico.
 GRUPOS_PERMITIDOS = {servico_usuario.GRUPO_CLIENTE, servico_usuario.GRUPO_TATUADOR}
+# Registrar etapas e limpar o histórico é trabalho do estúdio; a cliente só acompanha.
+SOMENTE_TATUADOR = {servico_usuario.GRUPO_TATUADOR}
 
 
 # List informa que a resposta é uma coleção; Optional deixa o identificador do cliente opcional.
 @router.get("/tatuagens/{tatuagem_id}/passos", response_model=List[PassoSaida])
 def listar_passos(
     tatuagem_id: int,
+    # Mantido só para as telas antigas continuarem funcionando; o filtro real vem do token.
     cliente_id: Optional[int] = None,
-    # NOVO: valida o token e depois confirma que o perfil pertence ao grupo permitido.
     usuario: dict = Depends(servico_usuario.requerer_perfil(GRUPOS_PERMITIDOS)),
 ):
-    passos = servico_passo.listar_passos(tatuagem_id, cliente_id)
+    passos = servico_passo.listar_passos(tatuagem_id, usuario)
     if passos is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -40,8 +42,8 @@ def listar_passos(
 def registrar_passo(
     tatuagem_id: int,
     dados: PassoEntrada,
-    # NOVO: qualquer pessoa do grupo autorizado pode registrar etapas do andamento da tatuagem.
-    usuario: dict = Depends(servico_usuario.requerer_perfil(GRUPOS_PERMITIDOS)),
+    # Só o tatuador registra etapas; para a cliente, a rota responde 403.
+    usuario: dict = Depends(servico_usuario.requerer_perfil(SOMENTE_TATUADOR)),
 ):
     passo, tatuagem, motivo = servico_passo.registrar_passo(
         tatuagem_id, dados.model_dump()
@@ -66,8 +68,8 @@ def registrar_passo(
 @router.delete("/tatuagens/{tatuagem_id}/passos")
 def limpar_historico(
     tatuagem_id: int,
-    # NOVO: a exclusão do histórico também exige grupo autorizado, reforçando o controle de acesso.
-    usuario: dict = Depends(servico_usuario.requerer_perfil(GRUPOS_PERMITIDOS)),
+    # Só o tatuador apaga o histórico.
+    usuario: dict = Depends(servico_usuario.requerer_perfil(SOMENTE_TATUADOR)),
 ):
     quantidade = servico_passo.limpar_historico(tatuagem_id)
     if quantidade is None:

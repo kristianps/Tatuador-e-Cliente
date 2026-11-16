@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { enderecoApi } from "../api.js";
+import { requisitar } from "../api.js";
 import ImagemIA from "../componentes/ImagemIA.jsx";
 import ResumoPedidoIA from "../componentes/ResumoPedidoIA.jsx";
 
@@ -49,11 +49,7 @@ function MinhasTatuagens({ perfil, aoAbrirConversa }) {
     function consultarPedidos() {
       if (consultando) return;
       consultando = true;
-      const token = localStorage.getItem("pereiratatto-token");
-
-      fetch(`${enderecoApi}/tatuagens?cliente_id=${perfil.id}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      })
+      requisitar(`/tatuagens?cliente_id=${perfil.id}`)
         .then((resposta) => {
           if (!resposta.ok) throw new Error("Não foi possível carregar suas tatuagens.");
           return resposta.json();
@@ -110,7 +106,7 @@ function MinhasTatuagens({ perfil, aoAbrirConversa }) {
       ativo = false;
       window.clearInterval(intervalo);
     };
-  }, [enderecoApi, perfil.id]);
+  }, [perfil.id]);
 
   // Busca os passos de uma tatuagem para exibir o histórico dentro desta tela.
   function abrirHistorico(tatuagem) {
@@ -119,10 +115,7 @@ function MinhasTatuagens({ perfil, aoAbrirConversa }) {
     definirEstadoHistorico("carregando");
     definirErroHistorico("");
 
-    const token = localStorage.getItem("pereiratatto-token");
-    fetch(`${enderecoApi}/tatuagens/${tatuagem.id}/passos?cliente_id=${perfil.id}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
+    requisitar(`/tatuagens/${tatuagem.id}/passos?cliente_id=${perfil.id}`)
       .then((resposta) => {
         if (!resposta.ok) {
           throw new Error("Não foi possível carregar o histórico.");

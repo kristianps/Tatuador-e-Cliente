@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { enderecoApi } from "../api.js";
+import { lerErro, requisitar } from "../api.js";
 import { TIPOS_ACEITOS, lerFoto } from "../imagens.js";
 import VisualizadorFoto from "./VisualizadorFoto.jsx";
 
@@ -8,12 +8,6 @@ import VisualizadorFoto from "./VisualizadorFoto.jsx";
 // A API roda em funções sem servidor da Vercel, que não mantêm conexão aberta,
 // então a tela consulta de tempos em tempos (polling) para parecer instantânea.
 const INTERVALO_CONSULTA_MS = 3000;
-
-// Monta os cabeçalhos com o token do login, que diz à API quem está escrevendo.
-function cabecalhosComToken(extras = {}) {
-  const token = localStorage.getItem("pereiratatto-token");
-  return token ? { ...extras, Authorization: `Bearer ${token}` } : extras;
-}
 
 // Mostra só a hora para mensagens de hoje e a data junto para as mais antigas.
 function formatarHorario(valor) {
@@ -62,11 +56,7 @@ function Conversa({ tatuagemId, usuario, titulo, aoLer }) {
     if (document.hidden || ateId <= lidaAteRef.current) return;
     lidaAteRef.current = ateId;
 
-    fetch(`${enderecoApi}/tatuagens/${tatuagemId}/mensagens/lidas`, {
-      method: "POST",
-      headers: cabecalhosComToken({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ ate_id: ateId }),
-    })
+    requisitar(`/tatuagens/${tatuagemId}/mensagens/lidas`, { metodo: "POST", corpo: { ate_id: ateId } })
       .then((resposta) => {
         if (!resposta.ok) throw new Error("Falha ao marcar como lida.");
         // Atualiza na hora os contadores das abas, sem esperar a próxima consulta.
@@ -100,9 +90,7 @@ function Conversa({ tatuagemId, usuario, titulo, aoLer }) {
       if (consultando || document.hidden) return;
       consultando = true;
 
-      fetch(`${enderecoApi}/tatuagens/${tatuagemId}/mensagens?depois_de=${ultimoIdRef.current}`, {
-        headers: cabecalhosComToken(),
-      })
+      requisitar(`/tatuagens/${tatuagemId}/mensagens?depois_de=${ultimoIdRef.current}`)
         .then((resposta) => {
           if (!resposta.ok) throw new Error("Não foi possível carregar a conversa.");
           return resposta.json();
@@ -152,10 +140,9 @@ function Conversa({ tatuagemId, usuario, titulo, aoLer }) {
     definirEnviando(true);
     definirErro("");
 
-    fetch(`${enderecoApi}/tatuagens/${tatuagemId}/mensagens`, {
-      method: "POST",
-      headers: cabecalhosComToken({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ texto: conteudo, imagem: foto || undefined }),
+    requisitar(`/tatuagens/${tatuagemId}/mensagens`, {
+      metodo: "POST",
+      corpo: { texto: conteudo, imagem: foto || undefined },
     })
       .then((resposta) => {
         if (!resposta.ok) throw new Error("Não foi possível enviar a mensagem. Tente novamente.");
@@ -187,15 +174,10 @@ function Conversa({ tatuagemId, usuario, titulo, aoLer }) {
     definirCarregandoSugestoes(true);
     definirErroSugestoes("");
     definirSugestoes([]);
-    fetch(`${enderecoApi}/ia/sugestoes-resposta`, {
-      method: "POST",
-      headers: cabecalhosComToken({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ tatuagem_id: tatuagemId }),
-    })
+    requisitar("/ia/sugestoes-resposta", { metodo: "POST", corpo: { tatuagem_id: tatuagemId } })
       .then(async (resposta) => {
-        const dados = await resposta.json().catch(() => ({}));
-        if (!resposta.ok) throw new Error(typeof dados.detail === "string" ? dados.detail : "Não foi possível sugerir respostas agora.");
-        return dados;
+        if (!resposta.ok) throw new Error(await lerErro(resposta, "Não foi possível sugerir respostas agora."));
+        return resposta.json();
       })
       .then((dados) => definirSugestoes(dados.sugestoes))
       .catch((erroIa) => definirErroSugestoes(erroIa.message))

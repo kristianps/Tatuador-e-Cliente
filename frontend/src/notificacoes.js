@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { enderecoApi } from "./api.js";
+import { requisitar } from "./api.js";
 
 // De quanto em quanto tempo o sistema confere se chegou mensagem nova, em qualquer tela.
 // Continua consultando com a aba escondida, porque é justamente aí que o aviso do navegador ajuda.
@@ -29,11 +29,7 @@ export function useMensagensNaoLidas(usuario, aoChegarNova) {
     function consultar() {
       if (consultando) return;
       consultando = true;
-      const token = localStorage.getItem("pereiratatto-token");
-
-      fetch(`${enderecoApi}/mensagens/nao-lidas`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      })
+      requisitar(`/mensagens/nao-lidas`)
         .then((resposta) => {
           if (!resposta.ok) throw new Error("Falha ao consultar mensagens não lidas.");
           return resposta.json();

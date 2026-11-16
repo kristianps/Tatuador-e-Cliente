@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { enderecoApi } from "../api.js";
+import { requisitar } from "../api.js";
 import AssistenteIA from "../componentes/AssistenteIA.jsx";
 import ResumoPedidoIA from "../componentes/ResumoPedidoIA.jsx";
 
@@ -104,16 +104,9 @@ function PedirTatuagem({ perfil, figuras }) {
     definirEstado("carregando");
     definirMensagem("");
 
-    const token = localStorage.getItem("pereiratatto-token");
-    const cabecalhos = {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
-
-    fetch(`${enderecoApi}/tatuagens`, {
-      method: "POST",
-      headers: cabecalhos,
-      body: JSON.stringify({
+    requisitar("/tatuagens", {
+      metodo: "POST",
+      corpo: {
         cliente_id: Number(perfil.id),
         ideia: partesDaIdeia.join(". "),
         local_corpo: localFinal,
@@ -121,7 +114,7 @@ function PedirTatuagem({ perfil, figuras }) {
         // undefined some do JSON, então pedidos sem imagem continuam iguais.
         imagem_ia: imagemIa || undefined,
         resumo_ia: resumoIa || undefined,
-      }),
+      },
     })
       .then((resposta) => {
         if (!resposta.ok) {

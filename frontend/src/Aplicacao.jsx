@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { enderecoApi } from "./api.js";
+import { EVENTO_SESSAO_EXPIRADA, requisitar } from "./api.js";
 import CampoSenha from "./componentes/CampoSenha.jsx";
 import VitrineEntrada from "./componentes/VitrineEntrada.jsx";
 import RecuperarSenha from "./telas/RecuperarSenha.jsx";
@@ -186,11 +186,7 @@ function Aplicacao() {
     definirErroLogin("");
     definirMensagemCadastro("");
 
-    fetch(`${enderecoApi}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, senha }),
-    })
+    requisitar("/login", { metodo: "POST", corpo: { email, senha }, publica: true })
       .then(async (resposta) => {
         const texto = await resposta.text();
 
@@ -227,10 +223,8 @@ function Aplicacao() {
         definirTelaAtual(resultado.usuario.perfil === "cliente" ? "pedir" : "agenda");
       })
       .catch((erro) => {
-        const mensagem =
-          erro?.message === "Failed to fetch"
-            ? "Não foi possível conectar ao servidor. Verifique se a API está em execução e se a URL está correta."
-            : erro?.message || "Não foi possível concluir o login.";
+        // A falta de conexão já chega aqui com a mensagem pronta, vinda do requisitar.
+        const mensagem = erro?.message || "Não foi possível concluir o login.";
 
         definirErroLogin(mensagem);
         definirEstadoLogin("erro");
@@ -250,11 +244,7 @@ function Aplicacao() {
 
     definirEstadoCadastro("carregando");
 
-    fetch(`${enderecoApi}/cadastro`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome, email: emailCadastro, senha: senhaCadastro }),
-    })
+    requisitar("/cadastro", { metodo: "POST", corpo: { nome, email: emailCadastro, senha: senhaCadastro }, publica: true })
       .then((resposta) => {
         if (!resposta.ok) {
           return resposta.json().then((detalhe) => {
@@ -279,10 +269,7 @@ function Aplicacao() {
         definirAbaAtiva("login");
       })
       .catch((erro) => {
-        const mensagem =
-          erro?.message === "Failed to fetch"
-            ? "Não foi possível conectar ao servidor. Verifique se a API está em execução e se a URL está correta."
-            : erro?.message || "Não foi possível criar a conta.";
+        const mensagem = erro?.message || "Não foi possível criar a conta.";
 
         definirErroCadastro(mensagem);
         definirEstadoCadastro("erro");
@@ -301,6 +288,17 @@ function Aplicacao() {
     }, Math.max(validade - Date.now(), 0));
     return () => window.clearTimeout(temporizador);
   }, [usuario]);
+
+  // Qualquer tela que receba 401 avisa pelo requisitar; aqui a sessão é encerrada uma vez só.
+  useEffect(() => {
+    function aoExpirar() {
+      if (!localStorage.getItem("pereiratatto-token")) return;
+      realizarLogout();
+      definirMensagemCadastro("Sua sessão expirou. Entre novamente.");
+    }
+    window.addEventListener(EVENTO_SESSAO_EXPIRADA, aoExpirar);
+    return () => window.removeEventListener(EVENTO_SESSAO_EXPIRADA, aoExpirar);
+  }, []);
 
   function realizarLogout() {
     localStorage.removeItem("pereiratatto-token");
@@ -452,11 +450,11 @@ function Aplicacao() {
     }
 
     if (usuario.perfil === "cliente" && telaAtual === "pedir") {
-      return <PedirTatuagem perfil={usuario} enderecoApi={enderecoApi} figuras={figurasIniciais} />;
+      return <PedirTatuagem perfil={usuario} figuras={figurasIniciais} />;
     }
 
     if (usuario.perfil === "cliente") {
-      return <MinhasTatuagens perfil={usuario} enderecoApi={enderecoApi} aoAbrirConversa={abrirConversa} />;
+      return <MinhasTatuagens perfil={usuario} aoAbrirConversa={abrirConversa} />;
     }
 
     // A aba Clientes é só do tatuador; a cliente nunca chega nela pelo menu.
@@ -465,10 +463,10 @@ function Aplicacao() {
     }
 
     if (telaAtual === "ficha") {
-      return <Ficha tatuagemId={tatuagemId} enderecoApi={enderecoApi} aoVoltar={voltarParaAgenda} aoAbrirConversa={abrirConversa} />;
+      return <Ficha tatuagemId={tatuagemId} aoVoltar={voltarParaAgenda} aoAbrirConversa={abrirConversa} />;
     }
 
-    return <Agenda enderecoApi={enderecoApi} aoAbrirFicha={abrirFicha} />;
+    return <Agenda aoAbrirFicha={abrirFicha} />;
   }
 
   return (

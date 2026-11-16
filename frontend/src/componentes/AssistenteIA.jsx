@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { enderecoApi } from "../api.js";
+import { lerErro, requisitar } from "../api.js";
 import { TIPOS_ACEITOS, lerFoto, reduzirImagem } from "../imagens.js";
 import VisualizadorFoto from "./VisualizadorFoto.jsx";
 
@@ -12,19 +12,12 @@ const sugestoesIniciais = [
   "Estilo old school colorido",
 ];
 
-function cabecalhosComToken() {
-  const token = localStorage.getItem("pereiratatto-token");
-  return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
-}
-
 // Envia para uma rota de IA e devolve o JSON; em erro, usa a mensagem que a API mandou.
 function chamarIa(caminho, corpo) {
-  return fetch(`${enderecoApi}${caminho}`, { method: "POST", headers: cabecalhosComToken(), body: JSON.stringify(corpo) })
-    .then(async (resposta) => {
-      const dados = await resposta.json().catch(() => ({}));
-      if (!resposta.ok) throw new Error(typeof dados.detail === "string" ? dados.detail : "A assistente não respondeu. Tente de novo.");
-      return dados;
-    });
+  return requisitar(caminho, { metodo: "POST", corpo }).then(async (resposta) => {
+    if (!resposta.ok) throw new Error(await lerErro(resposta, "A assistente não respondeu. Tente de novo."));
+    return resposta.json();
+  });
 }
 
 // Prepara a conversa para enviar: só a foto mais recente vai junto, as anteriores viram uma observação.

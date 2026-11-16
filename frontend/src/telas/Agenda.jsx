@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { enderecoApi } from "../api.js";
+import { requisitar } from "../api.js";
 
 // Os valores de etapa correspondem aos que a API já utiliza.
 const etapas = ["pedida", "desenho aprovado", "em sessões", "finalizada", "retoque feito"];
@@ -32,10 +32,7 @@ function Agenda({ aoAbrirFicha }) {
 
   // Carrega os pedidos; o filtro e a busca são aplicados nesta tela.
   useEffect(() => {
-    const token = localStorage.getItem("pereiratatto-token");
-    fetch(`${enderecoApi}/tatuagens`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
+    requisitar(`/tatuagens`)
       .then((resposta) => {
         if (!resposta.ok) throw new Error("Não foi possível carregar a agenda.");
         return resposta.json();
@@ -63,13 +60,9 @@ function Agenda({ aoAbrirFicha }) {
     );
     if (!confirmou) return;
 
-    const token = localStorage.getItem("pereiratatto-token");
     definirPedidoDescartando(tatuagem.id);
     definirErroAcao("");
-    fetch(`${enderecoApi}/tatuagens/${tatuagem.id}`, {
-      method: "DELETE",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
+    requisitar(`/tatuagens/${tatuagem.id}`, { metodo: "DELETE" })
       .then((resposta) => {
         if (!resposta.ok) throw new Error("Não foi possível descartar este pedido.");
         definirTatuagens((lista) => lista.filter((item) => item.id !== tatuagem.id));

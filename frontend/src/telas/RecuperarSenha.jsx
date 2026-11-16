@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { enderecoApi } from "../api.js";
+import { lerErro, requisitar } from "../api.js";
 import CampoSenha from "../componentes/CampoSenha.jsx";
 
 // Mostra o pedido do link por e-mail ou, quando a pessoa chega pelo link, a criação da nova senha.
@@ -14,26 +14,10 @@ function RecuperarSenha({ token, aoVoltar, aoRedefinir }) {
 
   // Envia os dados à API e devolve o erro em texto, pois a validação pode responder com uma lista.
   function enviar(caminho, dados, padraoDeErro) {
-    return fetch(`${enderecoApi}${caminho}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(dados),
-    })
-      .then((resposta) =>
-        resposta.json().then((corpo) => {
-          if (!resposta.ok) {
-            throw new Error(typeof corpo.detail === "string" ? corpo.detail : padraoDeErro);
-          }
-          return corpo;
-        })
-      )
-      .catch((falha) => {
-        throw new Error(
-          falha?.message === "Failed to fetch"
-            ? "Não foi possível conectar ao servidor. Tente novamente em instantes."
-            : falha?.message || padraoDeErro
-        );
-      });
+    return requisitar(caminho, { metodo: "POST", corpo: dados, publica: true }).then(async (resposta) => {
+      if (!resposta.ok) throw new Error(await lerErro(resposta, padraoDeErro));
+      return resposta.json();
+    });
   }
 
   function pedirLink(evento) {

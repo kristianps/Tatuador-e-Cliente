@@ -52,6 +52,46 @@ class HashDeSenhaTests(unittest.TestCase):
 
 
 class LoginTests(unittest.TestCase):
+    def setUp(self):
+        self.falhas = 0
+        simulacoes = [
+            patch.object(servico.repositorio_usuario, "contar_falhas_login", side_effect=lambda *_: self.falhas),
+            patch.object(servico.repositorio_usuario, "registrar_falha_login"),
+            patch.object(servico.repositorio_usuario, "limpar_falhas_login"),
+        ]
+        self.contar, self.registrar_falha, self.limpar_falhas = [s.start() for s in simulacoes]
+        for simulacao in simulacoes:
+            self.addCleanup(simulacao.stop)
+
+    def test_bloqueia_depois_de_cinco_erros_mesmo_com_a_senha_certa(self):
+        self.falhas = servico.MAXIMO_FALHAS_LOGIN
+        usuario = {**USUARIO, "senha_hash": seguranca.gerar_hash_senha("bruna123")}
+        with patch.object(servico.repositorio_usuario, "buscar_por_email", return_value=usuario) as buscar:
+            with self.assertRaises(HTTPException) as erro:
+                servico.autenticar_usuario(USUARIO["email"], "bruna123")
+        self.assertEqual(erro.exception.status_code, 429)
+        buscar.assert_not_called()
+
+    def test_erro_de_senha_e_registrado(self):
+        usuario = {**USUARIO, "senha_hash": seguranca.gerar_hash_senha("bruna123")}
+        with patch.object(servico.repositorio_usuario, "buscar_por_email", return_value=usuario):
+            servico.autenticar_usuario(USUARIO["email"], "errada")
+        self.registrar_falha.assert_called_once_with(USUARIO["email"])
+        self.limpar_falhas.assert_not_called()
+
+    def test_email_inexistente_tambem_conta_como_erro(self):
+        with patch.object(servico.repositorio_usuario, "buscar_por_email", return_value=None):
+            servico.autenticar_usuario("ninguem@x.com", "qualquer")
+        self.registrar_falha.assert_called_once_with("ninguem@x.com")
+
+    def test_login_certo_zera_os_erros(self):
+        self.falhas = servico.MAXIMO_FALHAS_LOGIN - 1
+        usuario = {**USUARIO, "senha_hash": seguranca.gerar_hash_senha("bruna123")}
+        with patch.object(servico.repositorio_usuario, "buscar_por_email", return_value=usuario):
+            self.assertIsNotNone(servico.autenticar_usuario(USUARIO["email"], "bruna123"))
+        self.limpar_falhas.assert_called_once_with(USUARIO["email"])
+        self.registrar_falha.assert_not_called()
+
     def test_senha_errada_nao_autentica(self):
         usuario = {**USUARIO, "senha_hash": seguranca.gerar_hash_senha("bruna123")}
         with patch.object(servico.repositorio_usuario, "buscar_por_email", return_value=usuario):

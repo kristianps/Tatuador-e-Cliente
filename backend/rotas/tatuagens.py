@@ -13,6 +13,8 @@ router = APIRouter(prefix="/tatuagens", tags=["Tatuagens"])
 # NOVO: define que as duas personas do projeto fazem parte do mesmo grupo de acesso total.
 # O cliente e o tatuador podem usar todas as rotas essenciais do sistema.
 GRUPOS_PERMITIDOS = {servico_usuario.GRUPO_CLIENTE, servico_usuario.GRUPO_TATUADOR}
+# Apagar um pedido é decisão do estúdio.
+SOMENTE_TATUADOR = {servico_usuario.GRUPO_TATUADOR}
 
 
 # Optional deixa cada filtro opcional; response_model documenta e valida os itens devolvidos.
@@ -23,7 +25,7 @@ def listar_tatuagens(
     # NOVO: cada rota essencial exige autenticação e valida o grupo do usuário.
     usuario: dict = Depends(servico_usuario.requerer_perfil(GRUPOS_PERMITIDOS)),
 ):
-    return servico_tatuagem.listar_tatuagens(etapa, cliente_id)
+    return servico_tatuagem.listar_tatuagens(usuario, etapa, cliente_id)
 
 
 # Mostra um pedido específico e sinaliza quando o identificador não existe.
@@ -33,7 +35,7 @@ def mostrar_tatuagem(
     # NOVO: a rota só pode ser acessada por grupos autorizados.
     usuario: dict = Depends(servico_usuario.requerer_perfil(GRUPOS_PERMITIDOS)),
 ):
-    tatuagem = servico_tatuagem.buscar_tatuagem(tatuagem_id)
+    tatuagem = servico_tatuagem.buscar_tatuagem(tatuagem_id, usuario)
     if tatuagem is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -79,15 +81,15 @@ def pedir_tatuagem(
     # NOVO: grupo validado antes da criação do cadastro da tatuagem.
     usuario: dict = Depends(servico_usuario.requerer_perfil(GRUPOS_PERMITIDOS)),
 ):
-    return servico_tatuagem.criar_tatuagem(dados.model_dump())
+    return servico_tatuagem.criar_tatuagem(dados.model_dump(), usuario)
 
 
 # Descarta um pedido e todo o histórico que pertence a ele.
 @router.delete("/{tatuagem_id}", status_code=status.HTTP_204_NO_CONTENT)
 def descartar_tatuagem(
     tatuagem_id: int,
-    # NOVO: remoção também fica restrita aos grupos autorizados do projeto.
-    usuario: dict = Depends(servico_usuario.requerer_perfil(GRUPOS_PERMITIDOS)),
+    # Só o tatuador descarta pedidos; para a cliente, a rota responde 403.
+    usuario: dict = Depends(servico_usuario.requerer_perfil(SOMENTE_TATUADOR)),
 ):
     tatuagem = servico_tatuagem.descartar_tatuagem(tatuagem_id)
     if tatuagem is None:

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { enderecoApi } from "../api.js";
+import { requisitar } from "../api.js";
 import ImagemIA from "../componentes/ImagemIA.jsx";
 import ResumoPedidoIA from "../componentes/ResumoPedidoIA.jsx";
 
@@ -45,15 +45,12 @@ function Ficha({ tatuagemId, aoVoltar, aoAbrirConversa }) {
   useEffect(() => {
     if (tatuagemId === null) return;
 
-    const token = localStorage.getItem("pereiratatto-token");
-    const cabecalhos = token ? { Authorization: `Bearer ${token}` } : {};
-
     definirTatuagem(null);
     definirEstado("carregando");
     definirErro("");
     Promise.all([
-      fetch(`${enderecoApi}/tatuagens/${tatuagemId}`, { headers: cabecalhos }),
-      fetch(`${enderecoApi}/tatuagens/${tatuagemId}/passos`, { headers: cabecalhos }),
+      requisitar(`/tatuagens/${tatuagemId}`),
+      requisitar(`/tatuagens/${tatuagemId}/passos`),
     ])
       .then(async ([respostaTatuagem, respostaPassos]) => {
         if (!respostaTatuagem.ok || !respostaPassos.ok) {
@@ -88,14 +85,9 @@ function Ficha({ tatuagemId, aoVoltar, aoAbrirConversa }) {
       .toISOString()
       .slice(0, 10);
 
-    const token = localStorage.getItem("pereiratatto-token");
-    fetch(`${enderecoApi}/tatuagens/${tatuagemId}/passos`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({ tipo: opcaoSelecionada.tipo, data: hoje, observacao: "" }),
+    requisitar(`/tatuagens/${tatuagemId}/passos`, {
+      metodo: "POST",
+      corpo: { tipo: opcaoSelecionada.tipo, data: hoje, observacao: "" },
     })
       .then((resposta) => {
         if (!resposta.ok) {
@@ -127,11 +119,7 @@ function Ficha({ tatuagemId, aoVoltar, aoAbrirConversa }) {
 
     definirLimpandoHistorico(true);
     definirErro("");
-    const token = localStorage.getItem("pereiratatto-token");
-    fetch(`${enderecoApi}/tatuagens/${tatuagemId}/passos`, {
-      method: "DELETE",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
+    requisitar(`/tatuagens/${tatuagemId}/passos`, { metodo: "DELETE" })
       .then((resposta) => {
         if (!resposta.ok) throw new Error("Não foi possível limpar este histórico.");
         return resposta.json();

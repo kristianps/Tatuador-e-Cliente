@@ -45,6 +45,19 @@ def inicializar() -> None:
             )
             # Sem isso, a tabela ficaria aberta pela API pública do Supabase; as outras tabelas também usam RLS.
             cursor.execute("ALTER TABLE recuperacoes_senha ENABLE ROW LEVEL SECURITY")
+            # Guarda as tentativas de login erradas, para bloquear quem tenta adivinhar senhas.
+            # Usa o e-mail digitado, e não o id, para contar também e-mails que não têm conta.
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS falhas_login (
+                    id SERIAL PRIMARY KEY,
+                    email VARCHAR(180) NOT NULL,
+                    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            cursor.execute("CREATE INDEX IF NOT EXISTS falhas_login_email ON falhas_login (email, criado_em)")
+            cursor.execute("ALTER TABLE falhas_login ENABLE ROW LEVEL SECURITY")
             # Campos do cadastro presencial, acrescentados à tabela que já existe em produção.
             # origem diz como a conta nasceu: 'site' (a própria pessoa se cadastrou) ou 'presencial' (o estúdio cadastrou).
             # DEFAULT 'site' preenche as contas antigas, que todas vieram do site.
@@ -241,4 +254,35 @@ def atualizar_senha_hash(usuario_id: int, senha_hash: str) -> None:
                 "UPDATE usuarios SET senha_hash = %s WHERE id = %s",
                 (senha_hash, usuario_id),
             )
+            banco.commit()
+
+
+# Conta as tentativas erradas recentes deste e-mail.
+def contar_falhas_login(email: str, minutos: int) -> int:
+    with closing(_conectar()) as banco:
+        with banco.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT COUNT(*) FROM falhas_login
+                WHERE email = %s AND criado_em > NOW() - make_interval(mins => %s)
+                """,
+                (email.lower().strip(), minutos),
+            )
+            return cursor.fetchone()[0]
+
+
+# Anota uma tentativa errada e aproveita para apagar as de mais de um dia, que já não contam.
+def registrar_falha_login(email: str) -> None:
+    with closing(_conectar()) as banco:
+        with banco.cursor() as cursor:
+            cursor.execute("DELETE FROM falhas_login WHERE criado_em < NOW() - INTERVAL '1 day'")
+            cursor.execute("INSERT INTO falhas_login (email) VALUES (%s)", (email.lower().strip(),))
+            banco.commit()
+
+
+# Depois de um login certo, as tentativas erradas anteriores deixam de contar.
+def limpar_falhas_login(email: str) -> None:
+    with closing(_conectar()) as banco:
+        with banco.cursor() as cursor:
+            cursor.execute("DELETE FROM falhas_login WHERE email = %s", (email.lower().strip(),))
             banco.commit()

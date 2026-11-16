@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { enderecoApi } from "../api.js";
+import { requisitar } from "../api.js";
 
 // Mostra o rascunho criado com a IA para um pedido, se houver. Sem imagem, não mostra nada.
 // Fica num componente à parte porque a imagem é buscada separada da lista de pedidos, que precisa ser leve.
@@ -10,10 +10,7 @@ function ImagemIA({ tatuagemId }) {
   useEffect(() => {
     let ativo = true;
     definirImagens([]);
-    const token = localStorage.getItem("pereiratatto-token");
-    fetch(`${enderecoApi}/tatuagens/${tatuagemId}/imagens-ia`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
+    requisitar(`/tatuagens/${tatuagemId}/imagens-ia`)
       // 404 é o caso normal de pedido sem imagem; não é erro para a tela.
       .then((resposta) => (resposta.ok ? resposta.json() : null))
       .then((dados) => {

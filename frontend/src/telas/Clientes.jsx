@@ -1,12 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { enderecoApi } from "../api.js";
-
-// Cabeçalhos com o token do login; as rotas de clientes só aceitam o tatuador.
-function cabecalhosComToken(extras = {}) {
-  const token = localStorage.getItem("pereiratatto-token");
-  return token ? { ...extras, Authorization: `Bearer ${token}` } : extras;
-}
+import { requisitar } from "../api.js";
 
 // Aba do tatuador para cadastrar quem vem pessoalmente ao estúdio e consultar todas as clientes.
 function Clientes() {
@@ -26,7 +20,7 @@ function Clientes() {
 
   // Busca a lista de clientes ao abrir a aba.
   function carregarClientes() {
-    fetch(`${enderecoApi}/clientes`, { headers: cabecalhosComToken() })
+    requisitar(`/clientes`)
       .then((resposta) => {
         if (!resposta.ok) throw new Error("Não foi possível carregar as clientes.");
         return resposta.json();
@@ -51,10 +45,9 @@ function Clientes() {
     definirCriada(null);
     definirCopiada(false);
 
-    fetch(`${enderecoApi}/clientes`, {
-      method: "POST",
-      headers: cabecalhosComToken({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ nome: nome.trim(), email: email.trim(), telefone: telefone.trim() }),
+    requisitar("/clientes", {
+      metodo: "POST",
+      corpo: { nome: nome.trim(), email: email.trim(), telefone: telefone.trim() },
     })
       .then(async (resposta) => {
         const corpo = await resposta.json().catch(() => ({}));

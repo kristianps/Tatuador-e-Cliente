@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { enderecoApi } from "../api.js";
+import { requisitar } from "../api.js";
 import Conversa from "../componentes/Conversa.jsx";
 import { pedirPermissaoNotificacao, permissaoNotificacao } from "../notificacoes.js";
 
@@ -17,11 +17,8 @@ function Mensagens({ usuario, pendentes, conversaId, aoSelecionar, aoLer }) {
     let ativo = true;
 
     function carregar() {
-      const token = localStorage.getItem("pereiratatto-token");
       const filtro = ehCliente ? `?cliente_id=${usuario.id}` : "";
-      fetch(`${enderecoApi}/tatuagens${filtro}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      })
+      requisitar(`/tatuagens${filtro}`)
         .then((resposta) => {
           if (!resposta.ok) throw new Error("Não foi possível carregar as conversas.");
           return resposta.json();

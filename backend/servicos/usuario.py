@@ -35,16 +35,32 @@ GRUPO_TATUADOR = "tatuador"
 MINUTOS_VALIDADE_RECUPERACAO = 30
 MAXIMO_RECUPERACOES_POR_HORA = 3
 
+# Proteção contra quem tenta adivinhar senhas: depois de 5 erros seguidos, o e-mail fica bloqueado
+# por 15 minutos. A pessoa de verdade ainda pode usar "Esqueci minha senha".
+MAXIMO_FALHAS_LOGIN = 5
+MINUTOS_BLOQUEIO_LOGIN = 15
+
 
 # Verifica credenciais e devolve o usuário associado ao e-mail se a senha bater.
 def autenticar_usuario(email: str, senha: str) -> Optional[dict]:
     _chave_jwt()
+    # O bloqueio vem antes de conferir a senha: enquanto ele dura, nem a senha certa entra.
+    if repositorio_usuario.contar_falhas_login(email, MINUTOS_BLOQUEIO_LOGIN) >= MAXIMO_FALHAS_LOGIN:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=(
+                f"Muitas tentativas erradas. Aguarde {MINUTOS_BLOQUEIO_LOGIN} minutos "
+                "ou use \"Esqueci minha senha\"."
+            ),
+        )
+
     usuario = repositorio_usuario.buscar_por_email(email)
-    if usuario is None:
+    # E-mail inexistente e senha errada contam igual, para a resposta não revelar quais contas existem.
+    if usuario is None or not seguranca.verificar_senha(senha, usuario["senha_hash"]):
+        repositorio_usuario.registrar_falha_login(email)
         return None
 
-    if not seguranca.verificar_senha(senha, usuario["senha_hash"]):
-        return None
+    repositorio_usuario.limpar_falhas_login(email)
 
     # Contas com o hash antigo passam para o formato novo aproveitando a senha que acabou de ser digitada.
     if seguranca.precisa_atualizar(usuario["senha_hash"]):
