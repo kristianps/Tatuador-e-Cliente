@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 import hashlib
 import secrets
@@ -12,6 +13,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from configuracao import (
     EMAIL_REMETENTE,
     JWT_ALGORITHM,
+    JWT_HORAS_VALIDADE,
     JWT_SECRET_KEY,
     SMTP_HOST,
     SMTP_PORTA,
@@ -20,6 +22,7 @@ from configuracao import (
     URL_DO_SITE,
 )
 from repositorios import usuario as repositorio_usuario
+import seguranca
 
 security = HTTPBearer()
 
@@ -33,24 +36,18 @@ MINUTOS_VALIDADE_RECUPERACAO = 30
 MAXIMO_RECUPERACOES_POR_HORA = 3
 
 
-# Usa um hash PBKDF2 para manter a senha fora do código e permitir a validação no login.
-def _hash_senha(senha: str) -> str:
-    return hashlib.pbkdf2_hmac(
-        "sha256",
-        senha.encode("utf-8"),
-        JWT_SECRET_KEY.encode("utf-8"),
-        100_000,
-    ).hex()
-
-
 # Verifica credenciais e devolve o usuário associado ao e-mail se a senha bater.
 def autenticar_usuario(email: str, senha: str) -> Optional[dict]:
     usuario = repositorio_usuario.buscar_por_email(email)
     if usuario is None:
         return None
 
-    if _hash_senha(senha) != usuario["senha_hash"]:
+    if not seguranca.verificar_senha(senha, usuario["senha_hash"]):
         return None
+
+    # Contas com o hash antigo passam para o formato novo aproveitando a senha que acabou de ser digitada.
+    if seguranca.precisa_atualizar(usuario["senha_hash"]):
+        repositorio_usuario.atualizar_senha_hash(usuario["id"], seguranca.gerar_hash_senha(senha))
 
     return usuario
 
@@ -119,7 +116,7 @@ def solicitar_recuperacao_senha(email: str) -> None:
 
 # Devolve True quando a senha mudou; a rota escolhe o status com base nesse resultado.
 def redefinir_senha(token: str, senha: str) -> bool:
-    return repositorio_usuario.redefinir_senha_por_token(_hash_token(token), _hash_senha(senha))
+    return repositorio_usuario.redefinir_senha_por_token(_hash_token(token), seguranca.gerar_hash_senha(senha))
 
 
 # Gera o token JWT que acompanhará as requisições autenticadas no backend.
@@ -129,6 +126,8 @@ def gerar_token(usuario: dict) -> str:
         "email": usuario["email"],
         "perfil": usuario["perfil"],
         "nome": usuario["nome"],
+        # exp é a data de validade; o jwt.decode recusa sozinho os tokens vencidos.
+        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_HORAS_VALIDADE),
     }
     return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 

@@ -1,8 +1,7 @@
-fastapi
-uvicorn
-sqlalchemy
-python-dotenv
-PyJWT
-psycopg2-binary
-mysql-connector-python
-email-validator
+fastapi==0.141.1
+uvicorn==0.54.0
+sqlalchemy==2.1.6
+python-dotenv==1.2.3
+PyJWT==2.15.1
+psycopg2-binary==2.9.13
+email-validator==2.3.0

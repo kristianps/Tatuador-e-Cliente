@@ -21,14 +21,20 @@ No PowerShell, a partir da raiz do repositório:
 cd backend
 python -m venv venv
 .\venv\Scripts\Activate.ps1
-pip install "fastapi[standard]" python-dotenv mysql-connector-python PyJWT
+pip install -r requirements.txt
 if (-not (Test-Path .env)) { Copy-Item .env.exemplo .env }
 ```
 
-Abra `backend/.env` e confira se `FRONTEND_ORIGEM` está como `http://127.0.0.1:5173`. Depois, ainda dentro de `backend/`, inicie a API:
+Abra `backend/.env` e preencha:
+
+- `URL_DO_BANCO`: a string de conexão do PostgreSQL (Supabase).
+- `JWT_SECRET_KEY`: obrigatória, com pelo menos 32 caracteres. Gere uma com `python -c "import secrets; print(secrets.token_urlsafe(48))"`. Sem ela, a API não inicia.
+- `FRONTEND_ORIGEM`: `http://127.0.0.1:5173`.
+
+Depois, ainda dentro de `backend/`, inicie a API:
 
 ```powershell
-fastapi dev main.py
+uvicorn main:app --reload
 ```
 
 A documentação interativa da API fica em [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
@@ -40,7 +46,17 @@ O sistema agora usa autenticação por e-mail e senha. A API cria os usuários d
 - Bruna — cliente — bruna@pereiratatto.com / bruna123
 - Vitor — tatuador — vitor@pereiratatto.com / vitor123
 
-Ao logar, a API retorna um token JWT que o frontend salva no `localStorage` e envia em `Authorization: Bearer ...` nas requisições protegidas.
+Ao logar, a API retorna um token JWT que o frontend salva no `localStorage` e envia em `Authorization: Bearer ...` nas requisições protegidas. O token vale por 12 horas (ajuste com `JWT_HORAS_VALIDADE`); depois disso, o frontend encerra a sessão e pede um novo login.
+
+## Testes
+
+Os testes ficam em `backend/tests/` e não precisam de banco nem de chaves de IA. Dentro de `backend/`:
+
+```powershell
+python -m unittest discover -s tests
+```
+
+O GitHub Actions roda os mesmos testes a cada push e pull request (`.github/workflows/testes.yml`).
 
 ## Como executar o frontend
 
@@ -63,7 +79,7 @@ Abra [http://127.0.0.1:5173](http://127.0.0.1:5173). A tela inicial agora pede l
 5. Após a cicatrização, registre o retoque e confira a etapa **finalizada**.
 6. Volte para Bruna e consulte o histórico atualizado.
 
-Os dados ficam em MySQL local e são persistidos enquanto o banco estiver ativo. O backend valida a sessão por token e cada perfil tem acesso de acordo com sua autenticação.
+Os dados ficam no PostgreSQL (Supabase) indicado em `URL_DO_BANCO`. O backend valida a sessão por token e cada perfil tem acesso de acordo com sua autenticação.
 
 ## Documentos do projeto
 

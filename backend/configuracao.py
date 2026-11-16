@@ -16,18 +16,18 @@ ORIGEM_FRONTEND = os.getenv("FRONTEND_ORIGEM") or (ORIGENS_FRONTEND[0] if ORIGEN
 # URL principal do PostgreSQL em produção. O backend deixa de depender de SQLite e usa o banco do Supabase/Vercel.
 URL_DO_BANCO = os.getenv("URL_DO_BANCO", "").strip()
 
-# Mantém só os campos de compatibilidade para ambientes legados; o banco principal passa a ser o PostgreSQL.
-MYSQL_HOST = os.getenv("MYSQL_HOST") or "localhost"
-MYSQL_PORT = int(os.getenv("MYSQL_PORT") or "5432")
-MYSQL_DATABASE = os.getenv("MYSQL_DATABASE") or "postgres"
-MYSQL_USER = os.getenv("MYSQL_USER") or "postgres"
-MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD") or ""
-SQLITE_PATH = os.getenv("SQLITE_PATH") or "pereiratatto.db"
-BANCO_TIPO = os.getenv("BANCO_TIPO") or "postgresql"
-
 # Configura a autenticação por JWT usada no login e nas rotas protegidas.
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY") or "pereiratatto-secreto-demo"
+# A chave é obrigatória: com um valor padrão no código, qualquer pessoa poderia gerar um token válido.
+# Gere uma com: python -c "import secrets; print(secrets.token_urlsafe(48))"
+JWT_SECRET_KEY = (os.getenv("JWT_SECRET_KEY") or "").strip()
+if len(JWT_SECRET_KEY) < 32:
+    raise RuntimeError(
+        "JWT_SECRET_KEY ausente ou curta demais (mínimo de 32 caracteres). "
+        "Defina a variável no backend/.env e no painel da Vercel."
+    )
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM") or "HS256"
+# Por quantas horas o login vale. Depois disso, a pessoa precisa entrar de novo.
+JWT_HORAS_VALIDADE = int(os.getenv("JWT_HORAS_VALIDADE") or "12")
 
 # Dados do envio de e-mail da recuperação de senha. O padrão aponta para o SMTP do Gmail.
 # SMTP é o protocolo usado para enviar e-mails; a porta 587 inicia sem criptografia e ativa o TLS em seguida.

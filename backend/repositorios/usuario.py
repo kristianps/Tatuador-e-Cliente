@@ -1,22 +1,11 @@
 from contextlib import closing
 from typing import Optional
-import hashlib
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
 import configuracao
-
-
-# Mantém o mesmo algoritmo de hash usado em servicos.usuario para que as credenciais demo
-# continuem válidas mesmo após reinicializar o banco ou os usuários iniciais.
-def _hash_senha(senha: str) -> str:
-    return hashlib.pbkdf2_hmac(
-        "sha256",
-        senha.encode("utf-8"),
-        configuracao.JWT_SECRET_KEY.encode("utf-8"),
-        100_000,
-    ).hex()
+import seguranca
 
 
 def _conectar():
@@ -76,12 +65,20 @@ def criar_usuarios_iniciais() -> None:
     with closing(_conectar()) as banco:
         with banco.cursor() as cursor:
             for nome, email, senha, perfil in usuarios:
-                senha_hash = _hash_senha(senha)
                 cursor.execute(
-                    "SELECT * FROM usuarios WHERE email = %s",
+                    "SELECT senha_hash FROM usuarios WHERE email = %s",
                     (email.lower(),),
                 )
                 usuario_existente = cursor.fetchone()
+
+                # Mantém o hash salvo quando ele já confere e está no formato atual;
+                # assim o banco não é reescrito a cada vez que a API inicia.
+                if usuario_existente is not None and seguranca.verificar_senha(
+                    senha, usuario_existente[0]
+                ) and not seguranca.precisa_atualizar(usuario_existente[0]):
+                    senha_hash = usuario_existente[0]
+                else:
+                    senha_hash = seguranca.gerar_hash_senha(senha)
 
                 if usuario_existente is None:
                     cursor.execute(
@@ -134,7 +131,7 @@ def criar_usuario(
     origem: str = "site",
 ):
     email_normalizado = email.lower().strip()
-    senha_hash = _hash_senha(senha)
+    senha_hash = seguranca.gerar_hash_senha(senha)
 
     with closing(_conectar()) as banco:
         with banco.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -234,3 +231,14 @@ def redefinir_senha_por_token(token_hash: str, senha_hash: str) -> bool:
             )
             banco.commit()
             return True
+
+
+# Grava um novo hash para a conta; usado para migrar senhas antigas para o formato com sal próprio.
+def atualizar_senha_hash(usuario_id: int, senha_hash: str) -> None:
+    with closing(_conectar()) as banco:
+        with banco.cursor() as cursor:
+            cursor.execute(
+                "UPDATE usuarios SET senha_hash = %s WHERE id = %s",
+                (senha_hash, usuario_id),
+            )
+            banco.commit()

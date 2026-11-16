@@ -26,6 +26,24 @@ const figurasIniciais = [
   { id: "naval", nome: "Composição naval", imagem: "/decalques/naval_recorte.jpg" },
 ];
 
+// Lê a data de validade (exp) guardada dentro do token JWT, em milissegundos.
+// O meio do token é um JSON em base64url; só lemos o valor, quem confere a assinatura é o servidor.
+function validadeDoToken(token) {
+  try {
+    const parte = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const dados = JSON.parse(atob(parte));
+    return typeof dados.exp === "number" ? dados.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+// Tokens sem data de validade são de antes da mudança e o servidor já não aceita: contam como vencidos.
+function tokenExpirado(token) {
+  const validade = validadeDoToken(token);
+  return validade === null || validade <= Date.now();
+}
+
 function Aplicacao() {
   const [nome, definirNome] = useState("");
   const [email, definirEmail] = useState("");
@@ -130,6 +148,10 @@ function Aplicacao() {
 
     if (token && usuarioSalvo) {
       try {
+        // O login vence depois de algumas horas; um token vencido não deve abrir a sessão.
+        if (tokenExpirado(token)) {
+          throw new Error("Sessão expirada");
+        }
         definirUsuario(JSON.parse(usuarioSalvo));
       } catch {
         localStorage.removeItem("pereiratatto-token");
@@ -266,6 +288,19 @@ function Aplicacao() {
         definirEstadoCadastro("erro");
       });
   }
+
+  // Encerra a sessão sozinha quando o token vence, em vez de deixar as telas falharem com erro 401.
+  useEffect(() => {
+    if (!usuario) return undefined;
+    const validade = validadeDoToken(localStorage.getItem("pereiratatto-token") || "");
+    if (validade === null) return undefined;
+    // setTimeout aceita no máximo cerca de 24 dias; a validade do login é bem menor que isso.
+    const temporizador = window.setTimeout(() => {
+      realizarLogout();
+      definirMensagemCadastro("Sua sessão expirou. Entre novamente.");
+    }, Math.max(validade - Date.now(), 0));
+    return () => window.clearTimeout(temporizador);
+  }, [usuario]);
 
   function realizarLogout() {
     localStorage.removeItem("pereiratatto-token");
