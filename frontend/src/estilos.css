@@ -2000,20 +2000,6 @@ a.cartao-cliente-dado { justify-self: start; color: var(--vinho); font-weight: 6
 .assistente-ia .aviso { margin: 0; }
 .assistente-ia .botao-secundario { justify-self: start; }
 
-/* Rascunho gerado: imagem grande, com o aviso de que o desenho final é do tatuador. */
-.assistente-imagem { display: grid; gap: 10px; }
-.rascunho-ia { display: grid; gap: 10px; margin: 0; }
-.rascunho-ia img {
-  width: 100%;
-  max-width: 420px;
-  aspect-ratio: 1;
-  object-fit: contain;
-  border-radius: 14px;
-  background: #fff;
-}
-.rascunho-ia figcaption { color: #d5c9c2; font-size: 13px; }
-.rascunho-ia .botao-principal { justify-self: start; }
-
 /* Rascunho já anexado ao pedido, logo abaixo da assistente. */
 .rascunho-anexado {
   display: grid;

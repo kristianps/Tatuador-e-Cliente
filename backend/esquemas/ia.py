@@ -34,20 +34,6 @@ class RespostaAssistenteSaida(BaseModel):
     resposta: str
 
 
-# A imagem é gerada a partir da mesma conversa.
-class ImagemEntrada(BaseModel):
-    historico: List[FalaAssistente] = Field(min_length=1, max_length=30)
-    ideia: str = Field(default="", max_length=1500)
-    local_corpo: str = Field(default="", max_length=120)
-    tamanho_cm: Optional[int] = Field(default=None, ge=1, le=100)
-    ajustes: str = Field(default="", max_length=1000)
-
-
-# A imagem volta como data URL, pronta para a tela mostrar num <img>.
-class ImagemSaida(BaseModel):
-    imagem: str
-
-
 class SugestoesEntrada(BaseModel):
     tatuagem_id: int = Field(gt=0)
 

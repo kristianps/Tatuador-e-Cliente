@@ -11,7 +11,7 @@ def _conectar():
     return psycopg2.connect(configuracao.URL_DO_BANCO)
 
 
-# Registra cada uso da IA (conversa, imagem ou sugestão), para limitar quanto cada pessoa usa por dia.
+# Registra cada uso da IA (conversa ou sugestão), para limitar quanto cada pessoa usa por dia.
 # Cada chamada à IA tem custo; sem limite, uma pessoa poderia gastar a cota do estúdio inteiro.
 def inicializar() -> None:
     with closing(_conectar()) as banco:

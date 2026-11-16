@@ -18,7 +18,7 @@ app = FastAPI(
         {"name": "Usuários", "description": "Login, autenticação e dados do usuário."},
         {"name": "Mensagens", "description": "Conversa entre cliente e tatuador sobre cada pedido."},
         {"name": "Clientes", "description": "Cadastro presencial e lista de clientes, para o tatuador."},
-        {"name": "Inteligência artificial", "description": "Assistente de ideias, imagem do rascunho e sugestões de resposta."},
+        {"name": "Inteligência artificial", "description": "Assistente de ideias e sugestões de resposta."},
     ],
 )
 

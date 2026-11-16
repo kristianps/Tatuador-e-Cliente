@@ -2,8 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from esquemas.ia import (
     ConversaAssistenteEntrada,
-    ImagemEntrada,
-    ImagemSaida,
     RespostaAssistenteSaida,
     SugestoesEntrada,
     SugestoesSaida,
@@ -37,25 +35,6 @@ def conversar(
     if motivo:
         _recusar(motivo)
     return {"resposta": resposta}
-
-
-# Gera o rascunho da tatuagem a partir da conversa com a assistente.
-@router.post("/imagem", response_model=ImagemSaida)
-def gerar_imagem(
-    dados: ImagemEntrada,
-    usuario: dict = Depends(servico_usuario.requerer_perfil(GRUPOS_PERMITIDOS)),
-):
-    if not any(fala.papel == "cliente" and fala.texto.strip() for fala in dados.historico):
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Conte sua ideia antes de gerar a imagem.")
-
-    imagem, motivo = servico_ia.gerar_imagem(
-        usuario,
-        [fala.model_dump() for fala in dados.historico],
-        dados.model_dump(exclude={"historico"}),
-    )
-    if motivo:
-        _recusar(motivo)
-    return {"imagem": imagem}
 
 
 # Sugere 3 respostas prontas para a conversa de um pedido.

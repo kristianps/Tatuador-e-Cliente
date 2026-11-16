@@ -40,7 +40,7 @@ function prepararHistorico(historico) {
 
 // Assistente de ideias com IA, dentro da tela de pedido.
 // A cliente conversa, envia fotos de referência para a IA comentar e pode anexar uma foto ao pedido.
-function AssistenteIA({ aoUsar, localCorpo, tamanhoCm }) {
+function AssistenteIA({ aoUsar }) {
   const [aberta, definirAberta] = useState(false);
   // historico guarda a conversa no formato que a API espera: papel, texto e, se houver, a foto.
   const [historico, definirHistorico] = useState([]);
@@ -49,9 +49,6 @@ function AssistenteIA({ aoUsar, localCorpo, tamanhoCm }) {
   const [pensando, definirPensando] = useState(false);
   const [erro, definirErro] = useState("");
   const [fotoAberta, definirFotoAberta] = useState("");
-  const [ajustes, definirAjustes] = useState("");
-  const [imagensGeradas, definirImagensGeradas] = useState([]);
-  const [gerando, definirGerando] = useState(false);
   const listaRef = useRef(null);
   const arquivoRef = useRef(null);
 
@@ -102,22 +99,7 @@ function AssistenteIA({ aoUsar, localCorpo, tamanhoCm }) {
       .join("; ")
       .slice(0, 500);
     // Para o pedido, uma versão menor basta: o estúdio usa só como referência.
-    Promise.all([reduzirImagem(imagem, 768), ...imagensGeradas.map((proposta) => reduzirImagem(proposta, 768))])
-      .then(([reduzida, ...propostas]) => aoUsar({ imagem: reduzida, ideia: resumo, imagens: propostas }));
-  }
-
-  function criarRascunho() {
-    if (gerando || !historico.some((fala) => fala.papel === "cliente" && fala.texto.trim())) return;
-    definirGerando(true);
-    definirErro("");
-    const ideia = historico.filter((fala) => fala.papel === "cliente" && fala.texto).map((fala) => fala.texto).join("; ").slice(0, 500);
-    chamarIa("/ia/imagem", {
-      historico: prepararHistorico(historico), ideia, local_corpo: localCorpo || "",
-      tamanho_cm: tamanhoCm ? Number(tamanhoCm) : undefined, ajustes,
-    })
-      .then(({ imagem }) => definirImagensGeradas((atuais) => [...atuais, imagem].slice(-3)))
-      .catch((erroIa) => definirErro(erroIa.message))
-      .finally(() => definirGerando(false));
+    reduzirImagem(imagem, 768).then((reduzida) => aoUsar({ imagem: reduzida, ideia: resumo }));
   }
 
   const conversou = historico.some((fala) => fala.papel === "cliente");
@@ -168,26 +150,6 @@ function AssistenteIA({ aoUsar, localCorpo, tamanhoCm }) {
         ))}
         {pensando && <li className="fala-ia pensando">Pensando<span aria-hidden="true">…</span></li>}
       </ol>
-
-      {conversou && (
-        <div className="assistente-imagem">
-          <label className="campo-ideia-livre">
-            Ajustes para o próximo rascunho
-            <textarea value={ajustes} maxLength={1000} onChange={(evento) => definirAjustes(evento.target.value)} placeholder="Ex.: linhas mais finas, menos detalhes, incluir folhas…" />
-          </label>
-          <button className="botao-secundario" type="button" onClick={criarRascunho} disabled={gerando}>
-            {gerando ? "Criando rascunho…" : imagensGeradas.length ? "Gerar outra variação" : "Criar rascunho com IA"}
-          </button>
-          {imagensGeradas.map((imagem, indice) => (
-            <figure className="rascunho-ia" key={`${indice}-${imagem.slice(-24)}`}>
-              <img src={imagem} alt={`Variação ${indice + 1} do rascunho de tatuagem`} />
-              <figcaption>Variação {indice + 1} · rascunho para avaliação do tatuador</figcaption>
-              <button type="button" className="botao-usar-foto" onClick={() => usarNoPedido(imagem)}>Usar no meu pedido</button>
-            </figure>
-          ))}
-          {localCorpo && <small>Contexto incluído: {localCorpo}{tamanhoCm ? ` · ${tamanhoCm} cm` : ""}</small>}
-        </div>
-      )}
 
       {!conversou && (
         <div className="assistente-atalhos">

@@ -29,12 +29,12 @@ function ImagemIA({ tatuagemId }) {
 
   return (
     <div className="propostas-ia-pedido">
-      <h3>Propostas criadas com IA</h3>
-      <p>Rascunhos para comparação e avaliação do tatuador.</p>
+      <h3>Imagens de referência</h3>
+      <p>Anexadas pela cliente ao fazer o pedido.</p>
       {imagens.map((imagem, indice) => (
         <figure className="imagem-ia-pedido" key={indice}>
-          <img src={imagem} alt={`Proposta ${indice + 1} de referência do pedido`} loading="lazy" />
-          <figcaption>Proposta {indice + 1} · referência para revisão do tatuador</figcaption>
+          <img src={imagem} alt={`Imagem ${indice + 1} de referência do pedido`} loading="lazy" />
+          <figcaption>Referência {indice + 1}</figcaption>
         </figure>
       ))}
     </div>

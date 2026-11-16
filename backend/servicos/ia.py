@@ -9,12 +9,11 @@ from repositorios import mensagem as repositorio_mensagem
 from repositorios import tatuagem as repositorio_tatuagem
 from servicos.usuario import GRUPO_TATUADOR
 
-# Quantas vezes cada pessoa pode usar cada recurso em 24 horas. Imagem é o mais caro, por isso o menor limite.
-LIMITES_POR_DIA = {"conversa": 40, "imagem": 5, "sugestao": 30}
+# Quantas vezes cada pessoa pode usar cada recurso em 24 horas.
+LIMITES_POR_DIA = {"conversa": 40, "sugestao": 30}
 
-# Tempo máximo de espera pela resposta da IA. Imagem demora mais que texto.
+# Tempo máximo de espera pela resposta da IA.
 TEMPO_TEXTO = 30
-TEMPO_IMAGEM = 60
 
 INSTRUCAO_ASSISTENTE = """Você é a assistente de criação do PereiraTatto, um estúdio de tatuagem.
 Seu papel é ajudar a cliente a escolher uma tatuagem antes de fazer o pedido.
@@ -23,13 +22,10 @@ Seu papel é ajudar a cliente a escolher uma tatuagem antes de fazer o pedido.
 - Sugira de 2 a 3 ideias concretas e curtas quando já souber o suficiente.
 - Se a cliente enviar uma foto (uma tatuagem de referência, um desenho ou o local do corpo), descreva em poucas palavras o que vê e sugira como adaptar a ideia para tatuagem. Não tente identificar pessoas pela foto.
 - Quando a ideia estiver clara, diga que ela pode tocar em "Usar no meu pedido" embaixo da foto, ou descrever a ideia no pedido.
+- Você não cria imagens nem desenhos; o desenho final é sempre feito pelo tatuador.
 - Não informe preço, prazo ou agenda: isso é combinado com o estúdio.
 - Não dê orientação médica; para dúvidas de pele ou saúde, oriente a conversar com o tatuador.
 - Use texto simples, sem títulos nem tabelas."""
-
-INSTRUCAO_IMAGEM = """Crie o desenho de uma tatuagem, como uma folha de flash de estúdio:
-traço limpo, fundo branco liso, desenho centralizado, sem pele, sem pessoas, sem texto escrito e sem marca d'água.
-Siga o estilo e os elementos pedidos. Ideia da cliente, a partir da conversa com a assistente:"""
 
 INSTRUCAO_SUGESTOES = """Você ajuda {quem} de um estúdio de tatuagem a responder mensagens.
 Com base no pedido e nas últimas mensagens, escreva 3 respostas curtas e diferentes que {quem} poderia enviar agora.
@@ -149,56 +145,6 @@ def _gerar_texto(instrucao: str, historico: list, saida_json: bool = False) -> O
     return _texto_google(instrucao, historico, saida_json) or _texto_openrouter(instrucao, historico)
 
 
-# Imagem pela OpenRouter, que devolve a imagem pronta como data URL.
-def _imagem_openrouter(prompt: str, referencia: Optional[str] = None) -> Optional[str]:
-    if not configuracao.OPENROUTER_API_KEY:
-        return None
-    corpo = {
-        "model": configuracao.OPENROUTER_MODELO_IMAGEM,
-        # modalities pede ao modelo que responda com imagem, além de texto.
-        "modalities": ["image", "text"],
-        "messages": [{
-            "role": "user",
-            "content": ([{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": referencia}}]
-                        if referencia else prompt),
-        }],
-    }
-    resposta = _post_json(
-        "https://openrouter.ai/api/v1/chat/completions",
-        {"Authorization": f"Bearer {configuracao.OPENROUTER_API_KEY}"},
-        corpo,
-        TEMPO_IMAGEM,
-    )
-    try:
-        url = resposta["choices"][0]["message"]["images"][0]["image_url"]["url"]
-        return url if url.startswith("data:image/") else None
-    except (TypeError, KeyError, IndexError):
-        return None
-
-
-# Imagem pelo Google, que devolve o tipo e o conteúdo em base64; aqui viram um data URL.
-def _imagem_google(prompt: str, referencia: Optional[str] = None) -> Optional[str]:
-    if not configuracao.GOOGLE_API_KEY:
-        return None
-    partes = [{"text": prompt}]
-    if referencia:
-        tipo, conteudo = _partes_da_imagem(referencia)
-        partes.append({"inlineData": {"mimeType": tipo, "data": conteudo}})
-    corpo = {
-        "contents": [{"parts": partes}],
-        "generationConfig": {"responseModalities": ["IMAGE", "TEXT"]},
-    }
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{configuracao.GOOGLE_MODELO_IMAGEM}:generateContent"
-    resposta = _post_json(url, {"x-goog-api-key": configuracao.GOOGLE_API_KEY}, corpo, TEMPO_IMAGEM)
-    try:
-        for parte in resposta["candidates"][0]["content"]["parts"]:
-            if "inlineData" in parte:
-                return f"data:{parte['inlineData']['mimeType']};base64,{parte['inlineData']['data']}"
-    except (TypeError, KeyError, IndexError):
-        pass
-    return None
-
-
 # Confere o limite diário da pessoa. Devolve o motivo da recusa, ou None quando ainda pode usar.
 def _motivo_limite(usuario: dict, tipo: str) -> Optional[str]:
     if repositorio_ia.contar_uso_recente(usuario["id"], tipo) >= LIMITES_POR_DIA[tipo]:
@@ -218,41 +164,6 @@ def conversar(usuario: dict, historico: list) -> Tuple[Optional[str], Optional[s
 
     repositorio_ia.registrar_uso(usuario["id"], "conversa")
     return resposta, None
-
-
-# Gera o rascunho da tatuagem a partir do que a cliente disse na conversa com a assistente.
-def gerar_imagem(usuario: dict, historico: list, contexto: Optional[dict] = None) -> Tuple[Optional[str], Optional[str]]:
-    motivo = _motivo_limite(usuario, "imagem")
-    if motivo:
-        return None, motivo
-
-    # Junta as falas da cliente e a última sugestão da assistente, que já resume a ideia.
-    falas_cliente = [item["texto"] for item in historico if item["papel"] == "cliente" and item["texto"]]
-    sugestoes = [item["texto"] for item in historico if item["papel"] == "assistente"]
-    ideia = "\n".join(falas_cliente[-6:])
-    if sugestoes:
-        ideia += f"\nÚltima sugestão da assistente: {sugestoes[-1]}"
-    contexto = contexto or {}
-    detalhes = [f"Ideia: {contexto.get('ideia', '').strip() or ideia}"]
-    if sugestoes:
-        detalhes.append(f"Direção criativa discutida com a assistente: {sugestoes[-1]}")
-    if contexto.get("local_corpo"):
-        detalhes.append(f"Local do corpo: {contexto['local_corpo']}")
-    if contexto.get("tamanho_cm"):
-        detalhes.append(f"Tamanho aproximado: {contexto['tamanho_cm']} cm")
-    if contexto.get("ajustes"):
-        detalhes.append(f"Ajustes solicitados pela cliente: {contexto['ajustes'].strip()}")
-    detalhes.append("Crie uma composição adequada à área e ao tamanho indicados, com formas legíveis em escala pequena.")
-    detalhes.append("Use a foto de referência enviada pela cliente como inspiração visual, sem copiar marcas d'água ou elementos alheios à ideia.")
-    prompt = f"{INSTRUCAO_IMAGEM}\n" + "\n".join(detalhes)
-
-    referencia = next((item.get("imagem") for item in reversed(historico) if item.get("imagem")), None)
-    imagem = _imagem_openrouter(prompt, referencia) or _imagem_google(prompt, referencia)
-    if imagem is None:
-        return None, "A geração de imagem está indisponível agora. A conversa com a assistente continua funcionando."
-
-    repositorio_ia.registrar_uso(usuario["id"], "imagem")
-    return imagem, None
 
 
 # Sugere 3 respostas para a conversa de um pedido, do ponto de vista de quem está logado.
