@@ -35,7 +35,7 @@ def verificar_senha(senha: str, senha_hash: str) -> bool:
 
     if _eh_formato_antigo(senha_hash):
         # O sal antigo era a chave do JWT; confere com a chave atual e com o valor padrão de antes.
-        segredos = {configuracao.JWT_SECRET_KEY, _SEGREDO_PADRAO_ANTIGO}
+        segredos = {configuracao.JWT_SECRET_KEY, _SEGREDO_PADRAO_ANTIGO} - {""}
         return any(
             hmac.compare_digest(_pbkdf2(senha, segredo.encode("utf-8"), 100_000), senha_hash)
             for segredo in segredos

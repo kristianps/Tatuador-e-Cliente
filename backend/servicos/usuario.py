@@ -14,13 +14,13 @@ from configuracao import (
     EMAIL_REMETENTE,
     JWT_ALGORITHM,
     JWT_HORAS_VALIDADE,
-    JWT_SECRET_KEY,
     SMTP_HOST,
     SMTP_PORTA,
     SMTP_SENHA,
     SMTP_USUARIO,
     URL_DO_SITE,
 )
+import configuracao
 from repositorios import usuario as repositorio_usuario
 import seguranca
 
@@ -38,6 +38,7 @@ MAXIMO_RECUPERACOES_POR_HORA = 3
 
 # Verifica credenciais e devolve o usuário associado ao e-mail se a senha bater.
 def autenticar_usuario(email: str, senha: str) -> Optional[dict]:
+    _chave_jwt()
     usuario = repositorio_usuario.buscar_por_email(email)
     if usuario is None:
         return None
@@ -119,6 +120,18 @@ def redefinir_senha(token: str, senha: str) -> bool:
     return repositorio_usuario.redefinir_senha_por_token(_hash_token(token), seguranca.gerar_hash_senha(senha))
 
 
+# Devolve a chave do JWT ou recusa com 503 (serviço indisponível) quando ela não foi configurada.
+# Fica numa função, e não num if na importação, para o resto da API continuar no ar sem a chave.
+def _chave_jwt() -> str:
+    if not configuracao.JWT_CONFIGURADA:
+        print("Aviso: JWT_SECRET_KEY ausente ou curta demais; login e rotas protegidas estão desativados.")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Login indisponível: o servidor está sem a JWT_SECRET_KEY configurada.",
+        )
+    return configuracao.JWT_SECRET_KEY
+
+
 # Gera o token JWT que acompanhará as requisições autenticadas no backend.
 def gerar_token(usuario: dict) -> str:
     payload = {
@@ -129,7 +142,7 @@ def gerar_token(usuario: dict) -> str:
         # exp é a data de validade; o jwt.decode recusa sozinho os tokens vencidos.
         "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_HORAS_VALIDADE),
     }
-    return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+    return jwt.encode(payload, _chave_jwt(), algorithm=JWT_ALGORITHM)
 
 
 # Descreve para o backend quem está autenticado em cada requisição protegida.
@@ -144,8 +157,9 @@ def obter_usuario_atual(
         )
 
     token = credenciais.credentials
+    chave = _chave_jwt()
     try:
-        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(token, chave, algorithms=[JWT_ALGORITHM])
     except jwt.PyJWTError as erro:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

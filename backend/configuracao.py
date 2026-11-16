@@ -17,14 +17,12 @@ ORIGEM_FRONTEND = os.getenv("FRONTEND_ORIGEM") or (ORIGENS_FRONTEND[0] if ORIGEN
 URL_DO_BANCO = os.getenv("URL_DO_BANCO", "").strip()
 
 # Configura a autenticação por JWT usada no login e nas rotas protegidas.
-# A chave é obrigatória: com um valor padrão no código, qualquer pessoa poderia gerar um token válido.
+# Não há valor padrão: com uma chave escrita no código, qualquer pessoa poderia gerar um token válido.
 # Gere uma com: python -c "import secrets; print(secrets.token_urlsafe(48))"
 JWT_SECRET_KEY = (os.getenv("JWT_SECRET_KEY") or "").strip()
-if len(JWT_SECRET_KEY) < 32:
-    raise RuntimeError(
-        "JWT_SECRET_KEY ausente ou curta demais (mínimo de 32 caracteres). "
-        "Defina a variável no backend/.env e no painel da Vercel."
-    )
+# Sem a chave, a API inicia mesmo assim (o /health mostra o problema), mas login e rotas protegidas
+# respondem 503. Derrubar a API inteira deixava o site fora do ar só com um erro genérico da Vercel.
+JWT_CONFIGURADA = len(JWT_SECRET_KEY) >= 32
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM") or "HS256"
 # Por quantas horas o login vale. Depois disso, a pessoa precisa entrar de novo.
 JWT_HORAS_VALIDADE = int(os.getenv("JWT_HORAS_VALIDADE") or "12")

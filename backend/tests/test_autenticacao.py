@@ -126,6 +126,45 @@ class TokenTests(unittest.TestCase):
         self.assertEqual(erro.exception.status_code, 401)
 
 
+class SemChaveJwtTests(unittest.TestCase):
+    def setUp(self):
+        sem_chave = patch.multiple(configuracao, JWT_SECRET_KEY="", JWT_CONFIGURADA=False)
+        sem_chave.start()
+        self.addCleanup(sem_chave.stop)
+
+    def test_login_responde_503_sem_consultar_o_banco(self):
+        with patch.object(servico.repositorio_usuario, "buscar_por_email") as buscar:
+            with self.assertRaises(HTTPException) as erro:
+                servico.autenticar_usuario(USUARIO["email"], "bruna123")
+        self.assertEqual(erro.exception.status_code, 503)
+        buscar.assert_not_called()
+
+    def test_rota_protegida_responde_503(self):
+        with self.assertRaises(HTTPException) as erro:
+            servico.obter_usuario_atual(_credencial("qualquer.token.aqui"))
+        self.assertEqual(erro.exception.status_code, 503)
+
+    def test_api_inicia_e_health_avisa_sem_a_chave(self):
+        # Processo separado, sem .env e sem banco, como um deploy na Vercel sem a variável.
+        import os
+        import subprocess
+        import sys
+
+        codigo = (
+            "import dotenv; dotenv.load_dotenv = lambda *a, **k: False\n"
+            "import main\n"
+            "print(main.health_check()['jwt'])\n"
+        )
+        ambiente = {chave: valor for chave, valor in os.environ.items() if chave not in ("JWT_SECRET_KEY", "URL_DO_BANCO")}
+        pasta_backend = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        resultado = subprocess.run(
+            [sys.executable, "-c", codigo], cwd=pasta_backend, env=ambiente,
+            capture_output=True, text=True, timeout=60,
+        )
+        self.assertEqual(resultado.returncode, 0, resultado.stderr)
+        self.assertIn("not-configured", resultado.stdout)
+
+
 class PerfilTests(unittest.TestCase):
     def test_cliente_nao_acessa_rota_de_tatuador(self):
         guarda = servico.requerer_perfil({servico.GRUPO_TATUADOR})

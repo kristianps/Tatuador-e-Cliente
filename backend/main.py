@@ -30,6 +30,8 @@ def health_check():
         "status": "ok",
         "service": "tatuador-e-cliente-api",
         "database": "configured" if configuracao.URL_DO_BANCO else "not-configured",
+        # Sem a chave do JWT, ninguém consegue entrar; aparece aqui para conferir depois de um deploy.
+        "jwt": "configured" if configuracao.JWT_CONFIGURADA else "not-configured",
         # Diz só se cada chave de IA foi configurada, nunca o valor dela.
         # Serve para conferir as variáveis de ambiente da Vercel depois de um deploy.
         "ia": {
@@ -73,3 +75,6 @@ if configuracao.URL_DO_BANCO:
         print(f"Aviso de inicialização do banco: {erro}")
 else:
     print("Aviso: URL_DO_BANCO não configurada. O backend iniciou sem conexão ao PostgreSQL.")
+
+if not configuracao.JWT_CONFIGURADA:
+    print("Aviso: JWT_SECRET_KEY ausente ou curta demais (mínimo de 32 caracteres). Login desativado até configurar.")
