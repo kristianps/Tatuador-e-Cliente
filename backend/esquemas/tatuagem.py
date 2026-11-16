@@ -2,6 +2,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from esquemas.ia import ResumoPedido
+
 
 # Define os dados de entrada; Field limita campos e o Pydantic responde 422 se eles não atenderem às restrições.
 class TatuagemEntrada(BaseModel):
@@ -13,6 +15,8 @@ class TatuagemEntrada(BaseModel):
     # Rascunho criado com a IA, opcional. Vem como data URL; o limite evita guardar arquivos enormes.
     imagem_ia: Optional[str] = Field(default=None, max_length=3_000_000)
     imagens_ia: List[str] = Field(default_factory=list, max_length=3)
+    # Resumo da conversa com a assistente, já revisado pela cliente. Opcional.
+    resumo_ia: Optional[ResumoPedido] = None
 
     # Aceita só imagens PNG, JPEG ou WebP em base64, para ninguém guardar outro tipo de conteúdo.
     @field_validator("imagem_ia")
@@ -41,6 +45,8 @@ class TatuagemSaida(BaseModel):
     # Optional porque os pedidos feitos antes deste campo não têm tamanho guardado.
     tamanho_cm: Optional[int] = None
     etapa: str
+    # Pedidos feitos sem a assistente não têm resumo.
+    resumo_ia: Optional[ResumoPedido] = None
 
 
 # Imagem da IA de um pedido, buscada à parte por ser grande.

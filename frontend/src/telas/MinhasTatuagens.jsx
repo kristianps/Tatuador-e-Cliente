@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { enderecoApi } from "../api.js";
 import ImagemIA from "../componentes/ImagemIA.jsx";
+import ResumoPedidoIA from "../componentes/ResumoPedidoIA.jsx";
 
 const chaveCelebracoes = (clienteId) => `pereiratatto-finalizadas-${clienteId}`;
 
@@ -216,7 +217,8 @@ function MinhasTatuagens({ perfil, aoAbrirConversa }) {
               <button className="botao-secundario" onClick={fecharHistorico}>Fechar</button>
             </div>
 
-            {/* O rascunho da IA que a cliente anexou ao pedido, se houver. */}
+            {/* O resumo e as fotos de referência que a cliente enviou com o pedido, se houver. */}
+            <ResumoPedidoIA resumo={tatuagemAberta.resumo_ia} />
             <ImagemIA tatuagemId={tatuagemAberta.id} />
 
             {estadoHistorico === "carregando" && <p>Carregando histórico…</p>}

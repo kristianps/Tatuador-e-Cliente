@@ -2,7 +2,7 @@ from contextlib import closing
 from typing import Optional
 
 import psycopg2
-from psycopg2.extras import RealDictCursor
+from psycopg2.extras import Json, RealDictCursor
 
 import configuracao
 
@@ -31,6 +31,8 @@ def inicializar() -> None:
             # IF NOT EXISTS deixa o comando rodar em toda inicialização sem dar erro;
             # a coluna aceita vazio porque os pedidos antigos foram feitos sem tamanho.
             cursor.execute("ALTER TABLE tatuagens ADD COLUMN IF NOT EXISTS tamanho_cm INTEGER")
+            # Resumo da IA em JSONB: o PostgreSQL guarda o objeto inteiro e o devolve já como dicionário.
+            cursor.execute("ALTER TABLE tatuagens ADD COLUMN IF NOT EXISTS resumo_ia JSONB")
             # A imagem criada com a IA fica numa tabela à parte: ela é grande, e a lista de pedidos,
             # consultada a cada poucos segundos, não precisa carregá-la junto.
             cursor.execute(
@@ -110,11 +112,19 @@ def criar(dados: dict) -> dict:
         with banco.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
                 """
-                INSERT INTO tatuagens (cliente_id, ideia, local_corpo, tamanho_cm, etapa)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO tatuagens (cliente_id, ideia, local_corpo, tamanho_cm, etapa, resumo_ia)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING *
                 """,
-                (dados["cliente_id"], dados["ideia"], dados["local_corpo"], dados["tamanho_cm"], "pedida"),
+                (
+                    dados["cliente_id"],
+                    dados["ideia"],
+                    dados["local_corpo"],
+                    dados["tamanho_cm"],
+                    "pedida",
+                    # Json converte o dicionário para o formato que o PostgreSQL espera; None vira NULL.
+                    Json(dados["resumo_ia"]) if dados.get("resumo_ia") else None,
+                ),
             )
             tatuagem = cursor.fetchone()
             banco.commit()

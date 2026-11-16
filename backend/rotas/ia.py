@@ -3,6 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from esquemas.ia import (
     ConversaAssistenteEntrada,
     RespostaAssistenteSaida,
+    ResumoPedido,
+    ResumoPedidoEntrada,
     SugestoesEntrada,
     SugestoesSaida,
 )
@@ -35,6 +37,21 @@ def conversar(
     if motivo:
         _recusar(motivo)
     return {"resposta": resposta}
+
+
+# Organiza a conversa com a assistente num resumo para o tatuador, que a cliente revisa antes de enviar o pedido.
+@router.post("/resumo-pedido", response_model=ResumoPedido)
+def resumir_pedido(
+    dados: ResumoPedidoEntrada,
+    usuario: dict = Depends(servico_usuario.requerer_perfil(GRUPOS_PERMITIDOS)),
+):
+    if not any(fala.papel == "cliente" for fala in dados.historico):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Converse com a assistente antes de resumir.")
+
+    resumo, motivo = servico_ia.resumir_pedido(usuario, [fala.model_dump() for fala in dados.historico])
+    if motivo:
+        _recusar(motivo)
+    return resumo
 
 
 # Sugere 3 respostas prontas para a conversa de um pedido.

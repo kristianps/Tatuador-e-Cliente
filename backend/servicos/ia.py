@@ -10,7 +10,7 @@ from repositorios import tatuagem as repositorio_tatuagem
 from servicos.usuario import GRUPO_TATUADOR
 
 # Quantas vezes cada pessoa pode usar cada recurso em 24 horas.
-LIMITES_POR_DIA = {"conversa": 40, "sugestao": 30}
+LIMITES_POR_DIA = {"conversa": 40, "sugestao": 30, "resumo": 20}
 
 # Tempo máximo de espera pela resposta da IA.
 TEMPO_TEXTO = 30
@@ -26,6 +26,18 @@ Seu papel é ajudar a cliente a escolher uma tatuagem antes de fazer o pedido.
 - Não informe preço, prazo ou agenda: isso é combinado com o estúdio.
 - Não dê orientação médica; para dúvidas de pele ou saúde, oriente a conversar com o tatuador.
 - Use texto simples, sem títulos nem tabelas."""
+
+INSTRUCAO_RESUMO = """Você organiza o pedido de tatuagem de uma cliente para o tatuador do estúdio PereiraTatto.
+Leia a conversa entre a cliente e a assistente de ideias e responda só com um objeto JSON com estas chaves:
+"estilo": o estilo em poucas palavras (ex.: "fineline", "old school"), ou "" se não foi decidido;
+"elementos": lista com até 6 elementos do desenho, cada um em poucas palavras;
+"significado": o significado ou a motivação em uma frase curta, ou "";
+"cores": "preto e cinza", "colorida" ou uma descrição curta das cores, ou "" se não foi decidido;
+"local_corpo": o local do corpo citado, ou "";
+"tamanho_cm": o tamanho aproximado em centímetros como número inteiro, ou null;
+"pendencias": lista com até 4 perguntas curtas que o tatuador ainda precisa fazer para desenhar.
+Use só o que a cliente disse ou aprovou; não invente detalhes. Se ela enviou uma foto de referência, pode citar o que aparece nela.
+Escreva em português do Brasil, sem preço, data ou horário."""
 
 INSTRUCAO_SUGESTOES = """Você ajuda {quem} de um estúdio de tatuagem a responder mensagens.
 Com base no pedido e nas últimas mensagens, escreva 3 respostas curtas e diferentes que {quem} poderia enviar agora.
@@ -78,6 +90,9 @@ def _texto_google(instrucao: str, historico: list, saida_json: bool) -> Optional
     config = {"temperature": 0.8, "maxOutputTokens": 1024, "thinkingConfig": {"thinkingLevel": "low"}}
     if saida_json:
         config["responseMimeType"] = "application/json"
+        # O limite de saída conta também o raciocínio interno do modelo; com pouco espaço,
+        # o JSON vinha cortado no meio. Respostas em JSON ganham mais folga.
+        config["maxOutputTokens"] = 4096
     corpo = {
         "systemInstruction": {"parts": [{"text": instrucao}]},
         # O Google chama a IA de "model" e a pessoa de "user".
@@ -216,3 +231,69 @@ def _ler_lista_json(texto: Optional[str]) -> list:
     if not isinstance(lista, list):
         return []
     return [str(item).strip()[:300] for item in lista if str(item).strip()][:3]
+
+
+# Lê o objeto que a IA devolveu. Aceita o objeto solto ou dentro de um bloco ```json.
+def _ler_objeto_json(texto: Optional[str]) -> dict:
+    if not texto:
+        return {}
+    limpo = texto.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+    try:
+        objeto = json.loads(limpo)
+    except ValueError:
+        return {}
+    return objeto if isinstance(objeto, dict) else {}
+
+
+def _texto_curto(valor, limite: int) -> str:
+    return str(valor).strip()[:limite] if isinstance(valor, (str, int, float)) else ""
+
+
+def _lista_curta(valor, quantidade: int) -> list:
+    if not isinstance(valor, list):
+        return []
+    itens = [_texto_curto(item, 200) for item in valor]
+    return [item for item in itens if item][:quantidade]
+
+
+# A IA pode errar o formato; aqui cada campo é ajustado ao tamanho e ao tipo que o pedido aceita.
+def _normalizar_resumo(bruto: dict) -> dict:
+    tamanho = bruto.get("tamanho_cm")
+    if isinstance(tamanho, float):
+        tamanho = round(tamanho)
+    if not isinstance(tamanho, int) or isinstance(tamanho, bool) or not 1 <= tamanho <= 100:
+        tamanho = None
+    return {
+        "estilo": _texto_curto(bruto.get("estilo"), 120),
+        "elementos": _lista_curta(bruto.get("elementos"), 6),
+        "significado": _texto_curto(bruto.get("significado"), 300),
+        "cores": _texto_curto(bruto.get("cores"), 120),
+        "pendencias": _lista_curta(bruto.get("pendencias"), 4),
+        "local_corpo": _texto_curto(bruto.get("local_corpo"), 120),
+        "tamanho_cm": tamanho,
+    }
+
+
+# Transforma a conversa com a assistente num resumo organizado para o tatuador.
+# A conversa vai como um texto só, para a IA ler tudo de uma vez e responder uma única vez em JSON.
+def resumir_pedido(usuario: dict, historico: list) -> Tuple[Optional[dict], Optional[str]]:
+    motivo = _motivo_limite(usuario, "resumo")
+    if motivo:
+        return None, motivo
+
+    historico = _manter_ultima_imagem(historico)
+    linhas = [
+        f"{'Cliente' if item['papel'] == 'cliente' else 'Assistente'}: "
+        + ((item.get("texto") or "").strip() or "(enviou uma foto)")
+        for item in historico
+    ]
+    foto = next((item["imagem"] for item in reversed(historico) if item.get("imagem")), None)
+    pedido = {"papel": "cliente", "texto": "Conversa:\n" + "\n".join(linhas), "imagem": foto}
+
+    resumo = _normalizar_resumo(_ler_objeto_json(_gerar_texto(INSTRUCAO_RESUMO, [pedido], saida_json=True)))
+    campos_preenchidos = [resumo["estilo"], resumo["elementos"], resumo["significado"], resumo["cores"]]
+    if not any(campos_preenchidos):
+        return None, "Não foi possível resumir a conversa agora. Tente de novo em instantes."
+
+    repositorio_ia.registrar_uso(usuario["id"], "resumo")
+    return resumo, None

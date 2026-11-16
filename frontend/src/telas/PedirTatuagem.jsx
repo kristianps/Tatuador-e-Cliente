@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { enderecoApi } from "../api.js";
 import AssistenteIA from "../componentes/AssistenteIA.jsx";
+import ResumoPedidoIA from "../componentes/ResumoPedidoIA.jsx";
 
 // Locais do corpo agrupados por região, para a cliente achar mais rápido.
 // Os nomes continuam os mesmos de antes, então os pedidos antigos seguem iguais na agenda.
@@ -32,6 +33,10 @@ function PedirTatuagem({ perfil, figuras }) {
   const [mostrarIdeiaLivre, definirMostrarIdeiaLivre] = useState(false);
   // Foto de referência escolhida na conversa com a assistente e anexada ao pedido (data URL), ou vazio.
   const [imagemIa, definirImagemIa] = useState("");
+  // Resumo da conversa organizado pela IA, que a cliente revisa antes de enviar; null quando não há.
+  const [resumoIa, definirResumoIa] = useState(null);
+  // Muda a cada novo resumo, para o formulário de revisão recomeçar com os textos do resumo novo.
+  const [versaoResumo, definirVersaoResumo] = useState(0);
   // Atualiza o passo em destaque conforme a cliente escolhe uma referência, a região do corpo e o tamanho.
   const passoAtual = localFinal && tamanhoCm
     ? 3
@@ -40,8 +45,20 @@ function PedirTatuagem({ perfil, figuras }) {
       : 1;
 
   // Recebe da assistente a foto de referência e o resumo da ideia, e preenche o pedido com eles.
-  function usarIdeiaDaIa({ imagem, ideia }) {
-    definirImagemIa(imagem);
+  function usarIdeiaDaIa({ imagem, ideia, resumo }) {
+    // Sem foto escolhida, mantém a que já estava anexada.
+    if (imagem) definirImagemIa(imagem);
+    if (resumo) {
+      definirResumoIa(resumo);
+      definirVersaoResumo((versao) => versao + 1);
+      // Preenche só o que a cliente ainda não escolheu; o que ela já marcou no formulário vale mais.
+      if (!tamanhoCm && resumo.tamanho_cm) definirTamanhoCm(String(resumo.tamanho_cm));
+      const localDoResumo = (resumo.local_corpo || "").trim().toLowerCase();
+      const localConhecido = regioesDoCorpo
+        .flatMap((grupo) => grupo.locais)
+        .find((local) => local.toLowerCase() === localDoResumo);
+      if (!localCorpo && localConhecido) definirLocalCorpo(localConhecido);
+    }
     // Só as palavras da cliente: o pedido já é enviado como "O que vem à mente da cliente: …".
     definirIdeiaLivre(ideia);
     // Abre o campo da ideia livre para a cliente ver e ajustar o texto antes de enviar.
@@ -103,6 +120,7 @@ function PedirTatuagem({ perfil, figuras }) {
         tamanho_cm: Number(tamanhoCm),
         // undefined some do JSON, então pedidos sem imagem continuam iguais.
         imagem_ia: imagemIa || undefined,
+        resumo_ia: resumoIa || undefined,
       }),
     })
       .then((resposta) => {
@@ -121,6 +139,7 @@ function PedirTatuagem({ perfil, figuras }) {
         definirLocalOutro("");
         definirTamanhoCm("");
         definirImagemIa("");
+        definirResumoIa(null);
       })
       .catch((erro) => {
         definirEstado("erro");
@@ -192,6 +211,16 @@ function PedirTatuagem({ perfil, figuras }) {
               <p>Foto de referência anexada ao pedido. O tatuador vai usá-la como inspiração para o desenho.</p>
               <button className="botao-secundario" type="button" onClick={() => definirImagemIa("")}>Remover</button>
             </div>
+          )}
+
+          {resumoIa && (
+            <ResumoPedidoIA
+              key={versaoResumo}
+              resumo={resumoIa}
+              editavel
+              aoMudar={definirResumoIa}
+              aoRemover={() => definirResumoIa(null)}
+            />
           )}
 
           <section className="ideia-personalizada">

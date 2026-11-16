@@ -49,6 +49,8 @@ function AssistenteIA({ aoUsar }) {
   const [pensando, definirPensando] = useState(false);
   const [erro, definirErro] = useState("");
   const [fotoAberta, definirFotoAberta] = useState("");
+  // Enquanto a IA organiza o resumo da conversa para o pedido.
+  const [resumindo, definirResumindo] = useState(false);
   const listaRef = useRef(null);
   const arquivoRef = useRef(null);
 
@@ -91,18 +93,32 @@ function AssistenteIA({ aoUsar }) {
       .catch((erroFoto) => definirErro(erroFoto.message));
   }
 
-  // Anexa ao pedido a foto escolhida, junto com um resumo do que a cliente escreveu.
-  function usarNoPedido(imagem) {
-    const resumo = historico
+  // Leva a conversa para o pedido: as palavras da cliente, o resumo organizado pela IA e, se escolhida, uma foto.
+  // Se o resumo falhar, a ideia e a foto seguem mesmo assim; o resumo é um extra, não trava o pedido.
+  function usarNoPedido(imagem = "") {
+    if (resumindo) return;
+    const ideia = historico
       .filter((fala) => fala.papel === "cliente" && fala.texto)
       .map((fala) => fala.texto)
       .join("; ")
       .slice(0, 500);
-    // Para o pedido, uma versão menor basta: o estúdio usa só como referência.
-    reduzirImagem(imagem, 768).then((reduzida) => aoUsar({ imagem: reduzida, ideia: resumo }));
+    definirResumindo(true);
+    definirErro("");
+    Promise.all([
+      chamarIa("/ia/resumo-pedido", { historico: prepararHistorico(historico) }).catch((erroIa) => {
+        definirErro(`${erroIa.message} Sua ideia foi levada para o pedido sem o resumo.`);
+        return null;
+      }),
+      // Para o pedido, uma versão menor basta: o estúdio usa só como referência.
+      imagem ? reduzirImagem(imagem, 768) : Promise.resolve(""),
+    ])
+      .then(([resumo, reduzida]) => aoUsar({ imagem: reduzida, ideia, resumo }))
+      .finally(() => definirResumindo(false));
   }
 
   const conversou = historico.some((fala) => fala.papel === "cliente");
+  // O resumo só faz sentido depois de a assistente ter respondido pelo menos uma vez.
+  const podeResumir = conversou && historico.some((fala) => fala.papel === "assistente");
 
   if (!aberta) {
     return (
@@ -140,7 +156,7 @@ function AssistenteIA({ aoUsar }) {
                 <button type="button" className="mensagem-foto" onClick={() => definirFotoAberta(fala.imagem)}>
                   <img src={fala.imagem} alt="Foto de referência enviada para a assistente" />
                 </button>
-                <button type="button" className="botao-usar-foto" onClick={() => usarNoPedido(fala.imagem)}>
+                <button type="button" className="botao-usar-foto" onClick={() => usarNoPedido(fala.imagem)} disabled={resumindo}>
                   Usar no meu pedido
                 </button>
               </div>
@@ -150,6 +166,15 @@ function AssistenteIA({ aoUsar }) {
         ))}
         {pensando && <li className="fala-ia pensando">Pensando<span aria-hidden="true">…</span></li>}
       </ol>
+
+      {podeResumir && (
+        <div className="assistente-usar-conversa">
+          <button className="botao-principal" type="button" onClick={() => usarNoPedido()} disabled={resumindo || pensando}>
+            {resumindo ? "Organizando o resumo…" : "Usar esta conversa no meu pedido"}
+          </button>
+          <small>A IA organiza estilo, elementos e o que falta definir, e você confere antes de enviar.</small>
+        </div>
+      )}
 
       {!conversou && (
         <div className="assistente-atalhos">
