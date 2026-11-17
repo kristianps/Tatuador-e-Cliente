@@ -98,10 +98,8 @@ function AssistenteIA({ aoUsar }) {
     definirResumindo(true);
     definirErro("");
     Promise.all([
-      chamarIa("/ia/resumo-pedido", { historico: prepararHistorico(historico) }).catch((erroIa) => {
-        definirErro(`${erroIa.message} Sua ideia foi levada para o pedido sem o resumo.`);
-        return null;
-      }),
+      // Sem resumo, a ideia e a foto seguem para o pedido do mesmo jeito; não há por que mostrar erro.
+      chamarIa("/ia/resumo-pedido", { historico: prepararHistorico(historico) }).catch(() => null),
       // Para o pedido, uma versão menor basta: o estúdio usa só como referência.
       imagem ? reduzirImagem(imagem, 768) : Promise.resolve(""),
     ])

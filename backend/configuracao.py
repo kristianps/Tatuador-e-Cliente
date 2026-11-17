@@ -47,5 +47,25 @@ GOOGLE_API_KEY = (os.getenv("GOOGLE_API_KEY") or "").strip()
 OPENROUTER_API_KEY = (os.getenv("OPENROUTER_API_KEY") or "").strip()
 
 # Os nomes dos modelos mudam com o tempo; ficam na configuração para trocar sem mexer no código.
-GOOGLE_MODELO_TEXTO = os.getenv("GOOGLE_MODELO_TEXTO") or "gemini-3-flash-preview"
-OPENROUTER_MODELO_TEXTO = os.getenv("OPENROUTER_MODELO_TEXTO") or "google/gemma-4-31b-it:free"
+
+
+def _lista(nome: str, padrao: str) -> list:
+    return [item.strip() for item in (os.getenv(nome) or padrao).split(",") if item.strip()]
+
+
+# Vários modelos em ordem de preferência. No plano gratuito cada modelo tem a sua própria cota por minuto:
+# quando um esgota (erro 429) ou está sobrecarregado (503), o próximo da lista responde no lugar.
+# Para trocar, defina a variável com os nomes separados por vírgula.
+GOOGLE_MODELOS_TEXTO = _lista(
+    "GOOGLE_MODELOS_TEXTO",
+    "gemini-3-flash-preview,gemini-3.1-flash-lite,gemini-flash-lite-latest,gemini-3.5-flash-lite",
+)
+OPENROUTER_MODELOS_TEXTO = _lista(
+    "OPENROUTER_MODELOS_TEXTO",
+    "google/gemma-4-31b-it:free,google/gemma-4-26b-a4b-it:free,nvidia/nemotron-3.5-super-vl:free",
+)
+# Compatibilidade: quem já tinha definido um modelo único continua com ele em primeiro lugar.
+if os.getenv("GOOGLE_MODELO_TEXTO"):
+    GOOGLE_MODELOS_TEXTO.insert(0, os.getenv("GOOGLE_MODELO_TEXTO").strip())
+if os.getenv("OPENROUTER_MODELO_TEXTO"):
+    OPENROUTER_MODELOS_TEXTO.insert(0, os.getenv("OPENROUTER_MODELO_TEXTO").strip())

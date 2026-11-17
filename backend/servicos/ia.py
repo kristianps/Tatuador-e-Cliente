@@ -1,4 +1,6 @@
 import json
+import time
+import unicodedata
 import urllib.error
 import urllib.request
 from typing import Optional, Tuple
@@ -12,8 +14,10 @@ from servicos.usuario import GRUPO_TATUADOR
 # Quantas vezes cada pessoa pode usar cada recurso em 24 horas.
 LIMITES_POR_DIA = {"conversa": 40, "sugestao": 30, "resumo": 20}
 
-# Tempo máximo de espera pela resposta da IA.
-TEMPO_TEXTO = 30
+# Tempo máximo de espera por modelo, e o tempo total para tentar todos os modelos da lista.
+# O total fica abaixo do limite de uma função da Vercel; acabou o tempo, entra a resposta de reserva.
+TEMPO_POR_MODELO = 12
+TEMPO_TOTAL = 25
 
 INSTRUCAO_ASSISTENTE = """Você é a assistente de criação do PereiraTatto, um estúdio de tatuagem.
 Seu papel é ajudar a cliente a escolher uma tatuagem antes de fazer o pedido.
@@ -47,7 +51,7 @@ Responda só com uma lista JSON de 3 textos, por exemplo: ["...", "...", "..."]"
 
 # Envia um pedido HTTP com corpo JSON e devolve a resposta já convertida.
 # urllib vem com o Python, então não precisa de biblioteca nova no requirements.
-def _post_json(url: str, cabecalhos: dict, corpo: dict, tempo: int) -> Optional[dict]:
+def _post_json(url: str, cabecalhos: dict, corpo: dict, tempo: float) -> Optional[dict]:
     pedido = urllib.request.Request(
         url,
         data=json.dumps(corpo).encode("utf-8"),
@@ -83,11 +87,30 @@ def _manter_ultima_imagem(historico: list) -> list:
     return resultado
 
 
+# Quanto tempo ainda resta antes do prazo; nunca mais que o tempo de um modelo.
+def _tempo_restante(prazo: float) -> float:
+    return min(TEMPO_POR_MODELO, prazo - time.monotonic())
+
+
 # Texto pelo Google AI Studio. historico é uma lista de {"papel": "cliente" ou "assistente", "texto": ..., "imagem": ...}.
-def _texto_google(instrucao: str, historico: list, saida_json: bool) -> Optional[str]:
+# Tenta os modelos da lista em ordem e para no primeiro que responder.
+def _texto_google(instrucao: str, historico: list, saida_json: bool, prazo: float) -> Optional[str]:
     if not configuracao.GOOGLE_API_KEY:
         return None
-    config = {"temperature": 0.8, "maxOutputTokens": 1024, "thinkingConfig": {"thinkingLevel": "low"}}
+    for modelo in configuracao.GOOGLE_MODELOS_TEXTO:
+        if _tempo_restante(prazo) < 2:
+            return None
+        texto = _texto_google_modelo(modelo, instrucao, historico, saida_json, _tempo_restante(prazo))
+        if texto:
+            return texto
+    return None
+
+
+def _texto_google_modelo(modelo: str, instrucao: str, historico: list, saida_json: bool, tempo: float) -> Optional[str]:
+    config = {"temperature": 0.8, "maxOutputTokens": 1024}
+    # O modo de raciocínio curto só existe na família Gemini 3 em diante; outros modelos recusariam o pedido.
+    if modelo.startswith("gemini-3") or "latest" in modelo:
+        config["thinkingConfig"] = {"thinkingLevel": "low"}
     if saida_json:
         config["responseMimeType"] = "application/json"
         # O limite de saída conta também o raciocínio interno do modelo; com pouco espaço,
@@ -102,8 +125,8 @@ def _texto_google(instrucao: str, historico: list, saida_json: bool) -> Optional
         ],
         "generationConfig": config,
     }
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{configuracao.GOOGLE_MODELO_TEXTO}:generateContent"
-    resposta = _post_json(url, {"x-goog-api-key": configuracao.GOOGLE_API_KEY}, corpo, TEMPO_TEXTO)
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent"
+    resposta = _post_json(url, {"x-goog-api-key": configuracao.GOOGLE_API_KEY}, corpo, tempo)
     try:
         partes = resposta["candidates"][0]["content"]["parts"]
         # As partes marcadas como "thought" são o raciocínio interno do modelo, não a resposta.
@@ -135,19 +158,20 @@ def _conteudo_openrouter(item: dict):
 
 
 # Texto pela OpenRouter, usada quando o Google falha.
-def _texto_openrouter(instrucao: str, historico: list) -> Optional[str]:
-    if not configuracao.OPENROUTER_API_KEY:
+def _texto_openrouter(instrucao: str, historico: list, prazo: float) -> Optional[str]:
+    if not configuracao.OPENROUTER_API_KEY or _tempo_restante(prazo) < 2:
         return None
     mensagens = [{"role": "system", "content": instrucao}] + [
         {"role": "assistant" if item["papel"] == "assistente" else "user", "content": _conteudo_openrouter(item)}
         for item in historico
     ]
-    corpo = {"model": configuracao.OPENROUTER_MODELO_TEXTO, "max_tokens": 800, "messages": mensagens}
+    # "models" é a lista de reserva da própria OpenRouter: se o primeiro estiver ocupado, ela tenta o seguinte.
+    corpo = {"models": configuracao.OPENROUTER_MODELOS_TEXTO[:3], "max_tokens": 1500, "messages": mensagens}
     resposta = _post_json(
         "https://openrouter.ai/api/v1/chat/completions",
         {"Authorization": f"Bearer {configuracao.OPENROUTER_API_KEY}"},
         corpo,
-        TEMPO_TEXTO,
+        _tempo_restante(prazo),
     )
     try:
         return (resposta["choices"][0]["message"]["content"] or "").strip() or None
@@ -155,9 +179,10 @@ def _texto_openrouter(instrucao: str, historico: list) -> Optional[str]:
         return None
 
 
-# Tenta o Google e, se ele falhar, a OpenRouter.
+# Tenta todos os modelos do Google e, se nenhum responder, os da OpenRouter, dentro do tempo total.
 def _gerar_texto(instrucao: str, historico: list, saida_json: bool = False) -> Optional[str]:
-    return _texto_google(instrucao, historico, saida_json) or _texto_openrouter(instrucao, historico)
+    prazo = time.monotonic() + TEMPO_TOTAL
+    return _texto_google(instrucao, historico, saida_json, prazo) or _texto_openrouter(instrucao, historico, prazo)
 
 
 # Confere o limite diário da pessoa. Devolve o motivo da recusa, ou None quando ainda pode usar.
@@ -168,17 +193,58 @@ def _motivo_limite(usuario: dict, tipo: str) -> Optional[str]:
 
 
 # Conversa da assistente de ideias. Devolve (resposta, motivo): só um dos dois vem preenchido.
+# Sem IA disponível (cotas esgotadas, serviço fora) ou com o limite diário atingido, a conversa
+# continua com perguntas-guia prontas, em vez de mostrar erro para a cliente.
 def conversar(usuario: dict, historico: list) -> Tuple[Optional[str], Optional[str]]:
-    motivo = _motivo_limite(usuario, "conversa")
-    if motivo:
-        return None, motivo
+    if _motivo_limite(usuario, "conversa"):
+        return _resposta_guia(historico), None
 
     resposta = _gerar_texto(INSTRUCAO_ASSISTENTE, _manter_ultima_imagem(historico))
     if resposta is None:
-        return None, "A assistente está indisponível agora. Tente de novo em instantes."
+        print("Aviso: nenhum modelo de IA respondeu; a assistente usou a resposta-guia.")
+        return _resposta_guia(historico), None
 
     repositorio_ia.registrar_uso(usuario["id"], "conversa")
     return resposta, None
+
+
+def _sem_acento(texto: str) -> str:
+    return "".join(c for c in unicodedata.normalize("NFD", texto.lower()) if unicodedata.category(c) != "Mn")
+
+
+# O que a assistente precisa saber, na ordem em que pergunta, com palavras que mostram que a cliente já respondeu.
+_PERGUNTAS_GUIA = [
+    (("fineline", "fine line", "old school", "tradicional", "blackwork", "realis", "aquarela", "geometric",
+      "minimalis", "traco fino", "pontilh", "tribal", "neotrad", "lettering", "escrita"),
+     "Qual estilo combina mais com você: traço fino (fineline), old school, blackwork, realismo, aquarela ou geométrico?"),
+    (("braco", "ombro", "mao", "dedo", "pulso", "costela", "costas", "peito", "nuca", "pescoco", "coxa",
+      "perna", "panturrilha", "canela", "tornozelo", " pe ", "barriga", "quadril", "clavicula"),
+     "Em que parte do corpo você pensa em fazer?"),
+    (("cm", "centimet", "pequen", "medi", "grand", "delicad", "fechament"),
+     "Mais ou menos de que tamanho, em centímetros?"),
+    (("signific", "homenag", "lembr", "represent", "simboli", "porque", "por que", "memoria"),
+     "Ela tem algum significado especial para você? Isso ajuda o tatuador a criar algo único."),
+]
+
+
+# Resposta montada sem IA: comenta a foto, se houver, e pergunta o próximo detalhe que ainda falta.
+def _resposta_guia(historico: list) -> str:
+    falas = [item for item in historico if item.get("papel") == "cliente"]
+    texto = " " + _sem_acento(" ".join(item.get("texto") or "" for item in falas)) + " "
+    ultima = falas[-1] if falas else {}
+
+    abertura = "Que legal!"
+    if ultima.get("imagem"):
+        abertura = "Recebi sua foto de referência, ela vai ajudar muito o tatuador!"
+
+    for palavras, pergunta in _PERGUNTAS_GUIA:
+        if not any(palavra in texto for palavra in palavras):
+            return f"{abertura} {pergunta}"
+
+    return (
+        f"{abertura} Acho que já temos uma boa ideia. Toque em \"Usar esta conversa no meu pedido\" "
+        "para levar tudo para o pedido; o tatuador vai transformar sua ideia em desenho."
+    )
 
 
 # Sugere 3 respostas para a conversa de um pedido, do ponto de vista de quem está logado.
@@ -190,9 +256,8 @@ def sugerir_respostas(usuario: dict, tatuagem_id: int) -> Tuple[Optional[list], 
     if tatuagem is None or (not eh_tatuador and tatuagem["cliente_id"] != usuario["id"]):
         return None, False, None
 
-    motivo = _motivo_limite(usuario, "sugestao")
-    if motivo:
-        return None, True, motivo
+    if _motivo_limite(usuario, "sugestao"):
+        return _sugestoes_prontas(eh_tatuador, tatuagem), True, None
 
     ultimas = repositorio_mensagem.listar_por_tatuagem(tatuagem_id)[-12:]
     # Mensagem só com foto aparece para a IA como "(enviou uma foto)".
@@ -213,7 +278,7 @@ def sugerir_respostas(usuario: dict, tatuagem_id: int) -> Tuple[Optional[list], 
 
     sugestoes = _ler_lista_json(texto)
     if not sugestoes:
-        return None, True, "Não foi possível sugerir respostas agora. Tente de novo em instantes."
+        return _sugestoes_prontas(eh_tatuador, tatuagem), True, None
 
     repositorio_ia.registrar_uso(usuario["id"], "sugestao")
     return sugestoes, True, None
@@ -297,3 +362,34 @@ def resumir_pedido(usuario: dict, historico: list) -> Tuple[Optional[dict], Opti
 
     repositorio_ia.registrar_uso(usuario["id"], "resumo")
     return resumo, None
+
+
+# Respostas prontas para quando a IA não responde: educadas, sem preço nem data, e de acordo com a etapa.
+_SUGESTOES_TATUADOR = {
+    "pedida": [
+        "Oi! Recebi seu pedido e já vou começar a pensar no desenho.",
+        "Você pode me mandar uma foto do local onde quer tatuar?",
+        "Tem mais alguma referência que você goste? Pode mandar por aqui.",
+    ],
+    "desenho aprovado": [
+        "Que bom que gostou do desenho! Vamos combinar a primeira sessão?",
+        "Lembre de se hidratar e dormir bem antes da sessão.",
+        "Qualquer dúvida sobre o desenho, é só me chamar.",
+    ],
+}
+_SUGESTOES_TATUADOR_PADRAO = [
+    "Oi! Como está a cicatrização?",
+    "Qualquer dúvida, é só me chamar por aqui.",
+    "Obrigado pela confiança! Logo te passo as novidades.",
+]
+_SUGESTOES_CLIENTE = [
+    "Oi! Alguma novidade sobre o meu pedido?",
+    "Posso mandar mais uma foto de referência?",
+    "Qual é o próximo passo?",
+]
+
+
+def _sugestoes_prontas(eh_tatuador: bool, tatuagem: dict) -> list:
+    if not eh_tatuador:
+        return list(_SUGESTOES_CLIENTE)
+    return list(_SUGESTOES_TATUADOR.get(tatuagem.get("etapa"), _SUGESTOES_TATUADOR_PADRAO))
