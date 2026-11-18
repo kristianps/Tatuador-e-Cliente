@@ -1,0 +1,21 @@
+<!doctype html><meta charset="utf-8"><style>body{margin:0;background:#888}iframe{border:0;display:block;background:#fff}</style>
+<iframe id="f" width="390" height="1800"></iframe>
+<script>
+const p = new URLSearchParams(location.search);
+if (p.get("sair")) { localStorage.clear(); }
+const f = document.getElementById("f");
+f.src = p.get("sair") ? "/" : "/__teste-celular.html";
+const zoom = p.get("zoom");
+if (zoom) f.addEventListener("load", () => setTimeout(() => {
+  const d = f.contentDocument; const st = d.createElement("style");
+  st.textContent = "html{font-size:" + zoom + "% !important}"; d.head.appendChild(st);
+  const largura = d.documentElement.scrollWidth; document.title = "largura:" + largura;
+  const aviso = document.createElement("p"); aviso.id = "largura"; aviso.textContent = "scrollWidth=" + largura; document.body.appendChild(aviso);
+}, 2500));
+const clicar = p.get("clicar");
+if (clicar) setTimeout(() => {
+  const d = f.contentDocument;
+  const b = [...d.querySelectorAll("button")].find((x) => x.textContent.trim() === clicar);
+  if (b) b.click();
+}, 3500);
+</script>
