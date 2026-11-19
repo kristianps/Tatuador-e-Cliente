@@ -1,0 +1,15 @@
+<section id="testes">
+<p class="eyebrow">08 · Testes automáticos</p>
+<h2>Cada regra importante tem um teste</h2>
+<table class="tabela-testes">
+<tr><th style="width:36%">Arquivo</th><th>O que ele confere</th></tr>
+<tr><td>test_autenticacao.py</td><td>Login, JWT que expira, hash das senhas e bloqueio após 5 erros</td></tr>
+<tr><td>test_permissoes.py</td><td>A cliente só vê e mexe nos próprios pedidos</td></tr>
+<tr><td>test_servico_passo.py</td><td>A ordem das etapas, com o retoque só depois da finalização</td></tr>
+<tr><td>test_ia_resumo.py</td><td>O resumo do pedido feito pela IA</td></tr>
+<tr><td>test_ia_reserva.py</td><td>A troca de modelo quando um falha</td></tr>
+<tr><td>test_pedido_imagens.py</td><td>A validação das imagens enviadas no pedido</td></tr>
+</table>
+<div class="nota" style="background:#EAE2D9; margin-top:48px;"><x-icon name="Code" style="color:#8F1D2C;"></x-icon><p style="color:#17110F;">O GitHub Actions roda todos os testes sozinho a cada envio de código.</p></div>
+<aside>Os testes ficam em backend/tests e rodam no GitHub a cada push, então uma mudança que quebre uma regra aparece na hora.</aside>
+</section>

@@ -1,0 +1,21 @@
+{
+  "v": 5,
+  "createdOnFiles": { "v": 1, "at": "2026-11-18T20:00:00Z" },
+  "lists": "css",
+  "format": { "v": 1, "shared": ["project/deck.css"] },
+  "title": "PereiraTatto — o que mudou desde a apresentação",
+  "cover": "capa",
+  "order": ["capa", "panorama", "acesso", "recuperar", "seguranca", "mensagens", "etapas", "clientes", "ia-assistente", "ia-resumo", "ia-modelos", "celular", "testes", "pendencias", "fim"],
+  "sections": {
+    "s0": { "description": "Abertura e visão geral do que entrou depois de 05/11.", "start": "capa" },
+    "s1": { "description": "Contas, acesso e segurança.", "start": "acesso" },
+    "s2": { "description": "Mensagens, pedido, etapas e cadastro presencial.", "start": "mensagens" },
+    "s3": { "description": "Inteligência artificial no pedido e na conversa.", "start": "ia-assistente" },
+    "s4": { "description": "Celular, acessibilidade, testes e fechamento.", "start": "celular" }
+  },
+  "faces": {
+    "fraunces": { "family": "Fraunces", "href": "https://fonts.googleapis.com/css2?family=Fraunces:wght@400..800&family=DM+Sans:wght@400..700&display=swap" },
+    "dm-sans": { "family": "DM Sans", "href": "https://fonts.googleapis.com/css2?family=Fraunces:wght@400..800&family=DM+Sans:wght@400..700&display=swap" }
+  },
+  "designSystems": []
+}

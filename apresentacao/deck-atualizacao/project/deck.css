@@ -1,0 +1,105 @@
+:root {
+  --carvao: #17110F;
+  --carvao2: #241A18;
+  --marfim: #F4EFE9;
+  --marfim2: #EAE2D9;
+  --vinho: #8F1D2C;
+  --vinho2: #6E1421;
+  --rosa: #E8A1AA;
+  --texto-escuro: #5A4E49;
+  --texto-claro: #C9BBB5;
+  --titulo: 'Fraunces', Georgia, serif;
+  --corpo: 'DM Sans', Arial, sans-serif;
+}
+
+body { font-family: var(--corpo); color: var(--carvao); }
+
+section { padding: 128px; box-sizing: border-box; background: var(--marfim); color: var(--carvao); counter-increment: page; }
+section.escuro { background: var(--carvao); color: var(--marfim); }
+section.vinho { background: var(--vinho); color: var(--marfim); }
+
+h1, h2, h3 { font-family: var(--titulo); margin: 0; }
+h1 { font-size: 120px; font-weight: 700; line-height: 1.02; letter-spacing: -2px; }
+h2 { font-size: 72px; font-weight: 650; line-height: 1.06; letter-spacing: -1px; }
+h3 { font-size: 32px; font-weight: 650; line-height: 1.2; }
+p { margin: 0; font-size: 28px; line-height: 1.45; }
+
+.eyebrow { font-family: var(--corpo); font-size: 24px; font-weight: 700; letter-spacing: 5px; text-transform: uppercase; color: var(--vinho); margin-bottom: 20px; }
+.escuro .eyebrow, .vinho .eyebrow { color: var(--rosa); }
+.sub { font-size: 32px; color: var(--texto-escuro); }
+.escuro .sub { color: var(--texto-claro); }
+.vinho .sub { color: #F1D7DA; }
+
+/* rodapé */
+.rodape { position: absolute; left: 128px; bottom: 56px; width: 1664px; display: flex; justify-content: space-between; }
+.rodape p { font-size: 24px; color: var(--texto-escuro); letter-spacing: 1px; }
+.escuro .rodape p { color: var(--texto-claro); }
+
+/* ===== Slides com print ===== */
+section.tela { display: flex; flex-direction: row; gap: 64px; align-items: flex-start; }
+.col { width: 560px; display: flex; flex-direction: column; flex-shrink: 0; }
+.col h2 { font-size: 64px; margin-bottom: 40px; }
+.legenda { display: flex; flex-direction: column; gap: 26px; }
+.item { display: flex; flex-direction: row; gap: 20px; align-items: flex-start; }
+.num { width: 48px; height: 48px; border-radius: 24px; background: var(--vinho); color: var(--marfim); font-size: 24px; font-weight: 700; text-align: center; line-height: 48px; flex-shrink: 0; }
+.item h3 { font-family: var(--corpo); font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.item .desc { font-size: 24px; color: var(--texto-escuro); line-height: 1.4; }
+.escuro .item .desc { color: var(--texto-claro); }
+
+.moldura { position: relative; width: 1040px; border-radius: 22px; overflow: hidden; background: var(--carvao); box-shadow: 0 30px 70px rgba(23,17,15,0.28); align-self: center; flex-shrink: 0; }
+.barra { height: 44px; display: flex; flex-direction: row; gap: 10px; align-items: center; padding-left: 20px; background: #2A201E; }
+.ponto { width: 13px; height: 13px; border-radius: 7px; background: #5B4A46; }
+.moldura img { display: block; width: 1040px; object-fit: contain; }
+
+.hl { position: absolute; box-sizing: border-box; border: 4px solid var(--rosa); border-radius: 14px; box-shadow: 0 0 0 7px rgba(232,161,170,0.30); animation: acende 600ms ease-out both; }
+.mk { position: absolute; width: 52px; height: 52px; box-sizing: border-box; border-radius: 26px; background: var(--vinho); border: 3px solid var(--marfim); box-shadow: 0 6px 16px rgba(23,17,15,0.45); animation: surge 450ms cubic-bezier(.2,.9,.3,1) both; }
+.mk p { font-size: 24px; font-weight: 700; color: var(--marfim); text-align: center; line-height: 46px; }
+
+/* celular */
+.celulares { display: flex; flex-direction: row; gap: 48px; align-items: flex-start; }
+.aparelho { width: 360px; display: flex; flex-direction: column; gap: 20px; align-items: center; }
+.tela-cel { width: 360px; border-radius: 44px; border: 10px solid var(--carvao); overflow: hidden; background: var(--carvao); box-shadow: 0 30px 60px rgba(23,17,15,0.30); box-sizing: border-box; }
+.tela-cel img { display: block; width: 340px; height: 700px; object-fit: cover; }
+.aparelho p { font-size: 24px; color: var(--texto-escuro); text-align: center; }
+
+/* cartões numéricos */
+.cartoes { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 28px; }
+.cartao { background: var(--carvao2); border-radius: 24px; padding: 40px 36px; display: flex; flex-direction: column; gap: 14px; border-top: 6px solid var(--vinho); animation: sobe 600ms ease-out both; }
+.cartao .grande { font-family: var(--titulo); font-size: 72px; font-weight: 700; color: var(--rosa); line-height: 1.05; }
+.cartao h3 { font-family: var(--corpo); font-size: 28px; font-weight: 700; color: var(--marfim); }
+.cartao p { font-size: 24px; color: var(--texto-claro); line-height: 1.4; }
+
+/* panorama */
+.numeros { display: flex; flex-direction: row; gap: 96px; margin: 56px 0 64px; }
+.numero .grande { font-family: var(--titulo); font-size: 120px; font-weight: 700; color: var(--vinho); line-height: 1; }
+.numero p { font-size: 28px; color: var(--texto-escuro); }
+.frentes { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; }
+.frente { display: flex; flex-direction: row; gap: 16px; align-items: center; background: var(--marfim2); border-radius: 18px; padding: 22px 24px; animation: sobe 500ms ease-out both; }
+.frente x-icon { width: 36px; height: 36px; color: var(--vinho); flex-shrink: 0; }
+.frente p { font-size: 26px; font-weight: 700; line-height: 1.2; }
+
+/* fluxo de modelos */
+.fluxo { display: flex; flex-direction: row; align-items: center; gap: 24px; margin-top: 64px; }
+.etapa { width: 400px; background: var(--carvao2); border-radius: 24px; padding: 36px; display: flex; flex-direction: column; gap: 12px; animation: sobe 600ms ease-out both; box-sizing: border-box; }
+.etapa .tag { font-size: 24px; font-weight: 700; letter-spacing: 3px; color: var(--rosa); text-transform: uppercase; }
+.etapa h3 { color: var(--marfim); font-size: 36px; }
+.etapa p { font-size: 24px; color: var(--texto-claro); line-height: 1.4; }
+.seta { width: 64px; height: 32px; color: var(--rosa); }
+.seta x-shape { width: 64px; height: 32px; background: var(--rosa); }
+.nota { margin-top: 56px; display: flex; flex-direction: row; gap: 20px; align-items: center; background: rgba(232,161,170,0.12); border-radius: 18px; padding: 24px 32px; }
+.nota x-icon { width: 36px; height: 36px; color: var(--rosa); flex-shrink: 0; }
+.nota p { font-size: 26px; color: var(--marfim); }
+
+/* tabela de testes */
+.tabela-testes { width: 1664px; font-size: 26px; color: var(--carvao); margin-top: 48px; }
+.tabela-testes th { color: var(--vinho); }
+
+/* lista simples */
+.lista { margin: 0; padding-left: 36px; display: flex; flex-direction: column; gap: 18px; }
+.lista li { font-size: 30px; line-height: 1.4; }
+
+/* animações de chegada */
+@keyframes surge { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+@keyframes acende { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sobe { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+.anima { animation: sobe 600ms ease-out both; }
